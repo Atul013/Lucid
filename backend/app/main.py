@@ -19,7 +19,6 @@ app.add_middleware(
 
 app.include_router(gmail_router)
 
-
 @app.get("/health")
 def health():
     return {"status": "ok"}
