@@ -21,10 +21,10 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| Project setup & folder structure | 🔄 Ongoing | Atul013 | feature/project-setup | Next.js + FastAPI scaffold |
-| ChromaDB setup | 📋 Todo | — | — | Local vector DB |
-| Ingestion pipeline (chunk + embed) | 📋 Todo | — | — | Depends on ChromaDB |
-| Google OAuth | 📋 Todo | — | — | Needed for Gmail, Keep, Calendar |
+| Project setup & folder structure | ✅ Done | Atul013 | feature/project-setup | Next.js + FastAPI scaffold |
+| ChromaDB setup | 🔄 Ongoing | Atul013 | feature/chromadb-ingestion | Local vector DB |
+| Ingestion pipeline (chunk + embed) | 🔄 Ongoing | Atul013 | feature/chromadb-ingestion | Depends on ChromaDB |
+| Google OAuth | ✅ Done | Atul013 | feature/gmail-connector | Needed for Gmail, Keep, Calendar |
 
 ---
 
@@ -91,4 +91,5 @@
 | 2026-06-15 | Atul013 | Project initialized |
 | 2026-06-16 | Atul013 | Started project setup & folder structure |
 | 2026-06-16 | Atul013 | Started Gmail connector |
+| 2026-06-16 | Atul013 | Started ChromaDB setup + ingestion pipeline |
 
