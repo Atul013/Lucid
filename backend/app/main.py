@@ -5,7 +5,7 @@ import os
 
 load_dotenv()
 
-from routers.gmail import router as gmail_router
+from app.routers.gmail import router as gmail_router
 
 app = FastAPI(title="Lucid API")
 
