@@ -1,7 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 import os
 
+load_dotenv()
+
+from routers.gmail import router as gmail_router
 app = FastAPI(title="Lucid API")
 
 app.add_middleware(
@@ -12,6 +16,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.include_router(gmail_router)
 
 @app.get("/health")
 def health():
