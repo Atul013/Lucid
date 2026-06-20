@@ -81,7 +81,7 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| UI polish | 📋 Todo | — | — | |
+| UI polish | 🔄 Ongoing | Atul013 | feature/ui-polish | Mobile-safe nav, consistency pass |
 | Expo demo prep | 🔄 Ongoing | Atul013 | feature/expo-prep | Demo script + mock-data seed + deployment guide |
 
 ---
@@ -95,6 +95,7 @@
 | 2026-06-16 | Atul013 | Started Gmail connector |
 | 2026-06-16 | Atul013 | Started ChromaDB setup + ingestion pipeline |
 | 2026-06-20 | Atul013 | Decided split deploy (Vercel FE + Azure BE); dockerization deferred |
+| 2026-06-20 | Atul013 | UI polish — mobile-safe nav |
 | 2026-06-20 | Atul013 | Started Connect Gmail + sync onboarding flow |
 | 2026-06-20 | Atul013 | Started Archive LLM (RAG via NVIDIA NIM) + chat/ask UI |
 | 2026-06-20 | Atul013 | Started Ego analysis job + insights page |
