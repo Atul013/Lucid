@@ -54,7 +54,36 @@ export default function Archive() {
   const [sync, setSync] = useState<Sync>({ kind: "idle" });
   const [search, setSearch] = useState<SearchState>({ kind: "idle" });
   const [ask, setAsk] = useState<AskState>({ kind: "idle" });
+  const [listening, setListening] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Browser-native speech-to-text. No server, no key (ponytail: native API
+  // over a Whisper backend). Chrome/Edge/Safari; gracefully absent elsewhere.
+  function startVoice() {
+    const SR =
+      typeof window !== "undefined" &&
+      ((window as any).SpeechRecognition ||
+        (window as any).webkitSpeechRecognition);
+    if (!SR) return;
+    const rec = new SR();
+    rec.lang = "en-US";
+    rec.interimResults = false;
+    rec.maxAlternatives = 1;
+    setListening(true);
+    rec.onresult = (e: any) => {
+      const transcript = e.results[0][0].transcript.trim();
+      if (inputRef.current) inputRef.current.value = transcript;
+      run(transcript);
+    };
+    rec.onerror = () => setListening(false);
+    rec.onend = () => setListening(false);
+    rec.start();
+  }
+
+  const voiceSupported =
+    typeof window !== "undefined" &&
+    !!((window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition);
 
   useEffect(() => {
     if (new URLSearchParams(window.location.search).has("connected")) {
@@ -78,9 +107,12 @@ export default function Archive() {
     }
   }
 
-  async function onSubmit(e: React.FormEvent) {
+  function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const q = inputRef.current?.value.trim();
+    run(inputRef.current?.value.trim());
+  }
+
+  async function run(q: string | undefined) {
     if (!q) return;
     if (mode === "search") {
       setSearch({ kind: "loading" });
@@ -210,6 +242,19 @@ export default function Archive() {
                 }
                 className="w-full bg-transparent font-display text-2xl leading-tight text-ink outline-none placeholder:text-faint sm:text-3xl"
               />
+              {voiceSupported && (
+                <button
+                  type="button"
+                  onClick={startVoice}
+                  aria-label="Speak your query"
+                  aria-pressed={listening}
+                  className={`shrink-0 cursor-pointer px-1 transition-colors ${
+                    listening ? "text-accent" : "text-faint hover:text-accent"
+                  }`}
+                >
+                  <MicGlyph className="h-5 w-5" listening={listening} />
+                </button>
+              )}
               <button
                 type="submit"
                 aria-label={mode === "ask" ? "Ask" : "Search"}
@@ -345,6 +390,31 @@ function Skeleton() {
         </li>
       ))}
     </ul>
+  );
+}
+
+function MicGlyph({
+  className,
+  listening,
+}: {
+  className?: string;
+  listening?: boolean;
+}) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="9" y="3" width="6" height="11" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
+      {listening && <circle cx="12" cy="8" r="1.2" fill="currentColor" stroke="none" />}
+    </svg>
   );
 }
 
