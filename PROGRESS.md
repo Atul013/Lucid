@@ -66,6 +66,7 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
+| UI Redesign — dark console theme | 🔄 Ongoing | ZayedBH | feature/ui-dark-console | Full dark redesign: WebGL shader hero, GSAP animations, Lenis scroll, 8-route landing |
 | Dashboard layout | 🔄 Ongoing | Atul013 | feature/dashboard-layout | Shared nav across Archive · Ego · Drift |
 | Connectors page | 👀 In Review | Atul013 | feature/connectors-onboarding | Connect Gmail + sync flow (first-run onboarding) |
 | Archive chat page | ✅ Done | Atul013 | feature/archive-search-ui | Editorial minimalist search UI over /gmail/search |
@@ -101,5 +102,6 @@
 | 2026-06-20 | Atul013 | Started Ego analysis job + insights page |
 | 2026-06-20 | Atul013 | Started Drift goals input + alignment check |
 | 2026-06-20 | Atul013 | Started Dashboard layout (shared nav) |
+| 2026-06-20 | ZayedBH | Started UI redesign — dark console theme (feature/ui-dark-console) |
 | 2026-06-20 | Atul013 | Batch: voice, knowledge graph, relationships, emotion timeline, briefing, expo prep |
 
