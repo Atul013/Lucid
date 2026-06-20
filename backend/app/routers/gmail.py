@@ -1,9 +1,12 @@
+import os
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import RedirectResponse
 from app.connectors import gmail as gmail_connector
 from app.connectors import chroma
 
 router = APIRouter()
+
+FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
 
 
 @router.get("/auth/google")
@@ -14,7 +17,8 @@ def auth_google():
 @router.get("/auth/google/callback")
 def auth_google_callback(code: str):
     gmail_connector.handle_callback(code)
-    return {"status": "gmail connected"}
+    # Land the user back in the app, not on a JSON page.
+    return RedirectResponse(f"{FRONTEND_URL}/?connected=1")
 
 
 @router.get("/gmail/status")
