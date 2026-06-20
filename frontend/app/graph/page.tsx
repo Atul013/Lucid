@@ -129,6 +129,7 @@ function Legend({ color, label }: { color: string; label: string }) {
 function Constellation({ graph }: { graph: Graph }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const hoverRef = useRef<string | null>(null);
+  const selectedRef = useRef<string | null>(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -188,6 +189,13 @@ function Constellation({ graph }: { graph: Graph }) {
       const R = Math.min(W, H) / 2 - (44 * scale + 22);
       const MAX = 6;
 
+      // When a node is focused (tapped/clicked), its neighbourhood spreads out
+      // for readability and everything unrelated eases to the periphery.
+      const focus = selectedRef.current;
+      const fNbrs = focus ? neighbours.get(focus) : null;
+      // stronger repulsion while focused so labels/lines stop overlapping
+      const repel = (focus ? 1500 : 700) * scale;
+
       for (const n of nodes) {
         n.r = baseR(n) * scale;
         let fx = 0;
@@ -197,14 +205,30 @@ function Constellation({ graph }: { graph: Graph }) {
           const dx = n.x - m.x;
           const dy = n.y - m.y;
           const d2 = dx * dx + dy * dy + 0.01;
-          // short-range repulsion: only stops overlap, never flings outward
-          const f = Math.min(30, (700 * scale) / d2);
+          const f = Math.min(focus ? 60 : 30, repel / d2);
           fx += f * dx;
           fy += f * dy;
         }
-        // firm pull to centre is what keeps it a clump, not a scatter
-        fx += (cx - n.x) * 0.045 + (Math.random() - 0.5) * 0.2 * scale;
-        fy += (cy - n.y) * 0.045 + (Math.random() - 0.5) * 0.2 * scale;
+        if (focus) {
+          if (n.id === focus) {
+            fx += (cx - n.x) * 0.16;
+            fy += (cy - n.y) * 0.16;
+          } else if (fNbrs?.has(n.id)) {
+            fx += (cx - n.x) * 0.015;
+            fy += (cy - n.y) * 0.015;
+          } else {
+            // push the unrelated nodes outward, out of the way
+            const dx = n.x - cx;
+            const dy = n.y - cy;
+            const d = Math.hypot(dx, dy) || 0.01;
+            fx += (dx / d) * 1.6 + (cx - n.x) * 0.004;
+            fy += (dy / d) * 1.6 + (cy - n.y) * 0.004;
+          }
+        } else {
+          // firm pull to centre keeps it a clump, not a scatter
+          fx += (cx - n.x) * 0.045 + (Math.random() - 0.5) * 0.2 * scale;
+          fy += (cy - n.y) * 0.045 + (Math.random() - 0.5) * 0.2 * scale;
+        }
         n.vx = (n.vx + fx) * 0.86;
         n.vy = (n.vy + fy) * 0.86;
       }
@@ -212,7 +236,10 @@ function Constellation({ graph }: { graph: Graph }) {
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const d = Math.hypot(dx, dy) || 0.01;
-        const diff = (d - 64 * scale) * 0.04;
+        // focused node's edges sit longer so its neighbours fan out around it
+        const touchesFocus = focus && (a.id === focus || b.id === focus);
+        const rest = (touchesFocus ? 120 : 64) * scale;
+        const diff = (d - rest) * 0.04;
         const ux = dx / d;
         const uy = dy / d;
         a.vx += ux * diff;
@@ -245,7 +272,7 @@ function Constellation({ graph }: { graph: Graph }) {
 
     function draw() {
       ctx.clearRect(0, 0, W, H);
-      const hovered = hoverRef.current;
+      const hovered = selectedRef.current ?? hoverRef.current;
       const near = hovered ? neighbours.get(hovered) : null;
       const scale = scaleNow();
       const fontPx = Math.max(9, Math.round(11 * scale));
@@ -311,27 +338,38 @@ function Constellation({ graph }: { graph: Graph }) {
     }
     loop();
 
-    function onMove(e: MouseEvent) {
+    function nodeAt(clientX: number, clientY: number): string | null {
       const rect = canvas!.getBoundingClientRect();
-      const mx = e.clientX - rect.left;
-      const my = e.clientY - rect.top;
-      let found: string | null = null;
+      const mx = clientX - rect.left;
+      const my = clientY - rect.top;
       for (const n of nodes) {
-        if ((mx - n.x) ** 2 + (my - n.y) ** 2 < (n.r + 8) ** 2) {
-          found = n.id;
-          break;
-        }
+        if ((mx - n.x) ** 2 + (my - n.y) ** 2 < (n.r + 10) ** 2) return n.id;
       }
+      return null;
+    }
+
+    function onMove(e: MouseEvent) {
+      const found = nodeAt(e.clientX, e.clientY);
       hoverRef.current = found;
       canvas!.style.cursor = found ? "pointer" : "default";
       if (reduced) draw();
     }
+
+    // Tap / click a node to focus it (toggles); tapping empty space clears.
+    function onTap(e: PointerEvent) {
+      const found = nodeAt(e.clientX, e.clientY);
+      selectedRef.current = selectedRef.current === found ? null : found;
+      if (reduced) draw();
+    }
+
     canvas.addEventListener("mousemove", onMove);
+    canvas.addEventListener("pointerdown", onTap);
     window.addEventListener("resize", resize);
 
     return () => {
       cancelAnimationFrame(raf);
       canvas.removeEventListener("mousemove", onMove);
+      canvas.removeEventListener("pointerdown", onTap);
       window.removeEventListener("resize", resize);
     };
   }, [graph]);
