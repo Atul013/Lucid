@@ -7,6 +7,7 @@ const LINKS = [
   { href: "/", label: "Archive" },
   { href: "/ego", label: "Ego" },
   { href: "/drift", label: "Drift" },
+  { href: "/graph", label: "Graph" },
 ];
 
 export default function Nav() {
