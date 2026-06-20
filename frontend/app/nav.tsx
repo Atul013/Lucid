@@ -9,6 +9,7 @@ const LINKS = [
   { href: "/drift", label: "Drift" },
   { href: "/graph", label: "Graph" },
   { href: "/relationships", label: "People" },
+  { href: "/timeline", label: "Timeline" },
 ];
 
 export default function Nav() {
