@@ -66,7 +66,7 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| Dashboard layout | 📋 Todo | — | — | Main shell, navigation |
+| Dashboard layout | 🔄 Ongoing | Atul013 | feature/dashboard-layout | Shared nav across Archive · Ego · Drift |
 | Connectors page | 👀 In Review | Atul013 | feature/connectors-onboarding | Connect Gmail + sync flow (first-run onboarding) |
 | Archive chat page | ✅ Done | Atul013 | feature/archive-search-ui | Editorial minimalist search UI over /gmail/search |
 | Ego insights page | 🔄 Ongoing | Atul013 | feature/ego-insights | /ego route |
@@ -99,4 +99,5 @@
 | 2026-06-20 | Atul013 | Started Archive LLM (RAG via NVIDIA NIM) + chat/ask UI |
 | 2026-06-20 | Atul013 | Started Ego analysis job + insights page |
 | 2026-06-20 | Atul013 | Started Drift goals input + alignment check |
+| 2026-06-20 | Atul013 | Started Dashboard layout (shared nav) |
 
