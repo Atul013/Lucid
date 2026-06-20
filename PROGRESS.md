@@ -55,8 +55,8 @@
 | Ego — analysis job | 🔄 Ongoing | Atul013 | feature/ego-insights | On-demand LLM pattern finder over archive |
 | Ego — insights dashboard | 🔄 Ongoing | Atul013 | feature/ego-insights | Renders Ego analysis output |
 | Ego — emotion timeline | 📋 Todo | — | — | Sentiment tracking across sources visualized over time |
-| Drift — goals input | 📋 Todo | — | — | User sets goals once |
-| Drift — deviation alerts | 📋 Todo | — | — | Depends on Ego + goals input |
+| Drift — goals input | 🔄 Ongoing | Atul013 | feature/drift-goals | User sets goals once |
+| Drift — deviation alerts | 🔄 Ongoing | Atul013 | feature/drift-goals | LLM aligns goals vs archive activity |
 | Relationship Intelligence | 📋 Todo | — | — | 4th AI layer — tracks how relationships evolve over time across sources |
 | Morning Briefing | 📋 Todo | — | — | Telegram bot delivers daily AI-generated briefing from Archive + Ego + Drift |
 
@@ -70,7 +70,7 @@
 | Connectors page | 👀 In Review | Atul013 | feature/connectors-onboarding | Connect Gmail + sync flow (first-run onboarding) |
 | Archive chat page | ✅ Done | Atul013 | feature/archive-search-ui | Editorial minimalist search UI over /gmail/search |
 | Ego insights page | 🔄 Ongoing | Atul013 | feature/ego-insights | /ego route |
-| Drift goals page | 📋 Todo | — | — | |
+| Drift goals page | 🔄 Ongoing | Atul013 | feature/drift-goals | /drift route |
 | Relationship Intelligence page | 📋 Todo | — | — | |
 | Emotion Timeline page | 📋 Todo | — | — | Sentiment graph over time |
 | Visual Knowledge Graph | 📋 Todo | — | — | Animated constellation of topics/people/connections — expo showstopper |
@@ -98,4 +98,5 @@
 | 2026-06-20 | Atul013 | Started Connect Gmail + sync onboarding flow |
 | 2026-06-20 | Atul013 | Started Archive LLM (RAG via NVIDIA NIM) + chat/ask UI |
 | 2026-06-20 | Atul013 | Started Ego analysis job + insights page |
+| 2026-06-20 | Atul013 | Started Drift goals input + alignment check |
 
