@@ -1,6 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import {
+  Shell,
+  PageHeader,
+  Kicker,
+  AccentButton,
+  Thinking,
+  StateNote,
+  Arrow,
+} from "../ui";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -48,71 +57,66 @@ export default function Today() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-2xl flex-col px-6 py-12 sm:py-16">
-      <header className="mb-12 sm:mb-16">
-        <h1 className="font-display text-4xl font-medium leading-none tracking-tight text-ink sm:text-5xl">
-          Today
-        </h1>
-        <p className="mt-4 max-w-md text-[0.95rem] leading-relaxed text-muted">
-          Your morning briefing — what matters today, drawn from across your
-          archive.
-        </p>
-      </header>
+    <Shell>
+      <PageHeader
+        kicker="Morning Briefing"
+        title="Today"
+        lead="What matters today — drawn quietly from across everything you've written and received."
+      />
 
-      {state === "loading" && (
-        <p className="text-[0.95rem] text-faint">Loading&hellip;</p>
-      )}
+      {state === "loading" && <Thinking label="Opening your day…" />}
       {state === "error" && (
-        <p className="text-[0.95rem] text-muted">
+        <StateNote>
           Couldn&rsquo;t reach the backend on{" "}
-          <span className="tabular-nums">localhost:8000</span>.
-        </p>
+          <span className="font-mono text-faint">localhost:8000</span>.
+        </StateNote>
       )}
-      {state === "building" && (
-        <p className="text-[0.95rem] text-faint">
-          Composing your briefing&hellip;
-        </p>
-      )}
+      {state === "building" && <Thinking label="Composing your briefing…" />}
 
       {state === "empty" && (
-        <div className="border-t border-line pt-10">
-          <p className="max-w-md text-[0.95rem] leading-relaxed text-muted">
+        <div className="card rise max-w-xl p-8 sm:p-10">
+          <p className="text-[1rem] leading-relaxed text-muted">
             Lucid weaves your recent mail, themes, and goals into one short
-            morning read.
+            morning read — the three things worth your attention before anything
+            else.
           </p>
-          <button
-            onClick={build}
-            className="mt-7 inline-flex h-11 cursor-pointer items-center gap-2 bg-ink px-6 text-[0.8rem] font-medium uppercase tracking-[0.15em] text-paper transition-colors hover:bg-accent"
-          >
+          <AccentButton onClick={build} className="mt-8">
             Compose today&rsquo;s briefing
-            <span aria-hidden="true">&rarr;</span>
-          </button>
+            <Arrow />
+          </AccentButton>
         </div>
       )}
 
       {state === "ready" && (
-        <article>
+        <article className="rise">
           {data.date && (
-            <p className="mb-6 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-faint">
-              {longDate(data.date)}
-            </p>
+            <Kicker className="mb-6 text-accent">{longDate(data.date)}</Kicker>
           )}
-          <p className="whitespace-pre-wrap font-display text-2xl leading-relaxed text-ink">
-            {data.briefing}
-          </p>
-          <div className="mt-10 flex items-center gap-4 border-t border-line pt-6">
+          <div className="card relative overflow-hidden p-8 sm:p-12">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute -left-10 -top-10 font-display text-[12rem] leading-none text-accent/10 select-none"
+            >
+              &ldquo;
+            </span>
+            <p className="relative whitespace-pre-wrap font-display text-[1.65rem] leading-relaxed text-ink sm:text-[1.9rem]">
+              {data.briefing}
+            </p>
+          </div>
+          <div className="mt-8 flex flex-wrap items-center gap-5">
             <button
               onClick={build}
-              className="cursor-pointer text-[0.7rem] font-medium uppercase tracking-[0.15em] text-faint transition-colors hover:text-accent"
+              className="cursor-pointer font-mono text-[0.66rem] uppercase tracking-[0.18em] text-faint transition-colors hover:text-accent"
             >
-              Refresh
+              ↻ Refresh briefing
             </button>
-            <span className="text-[0.7rem] uppercase tracking-[0.15em] text-faint">
-              Telegram delivery — coming soon
+            <span className="flex items-center gap-2 font-mono text-[0.66rem] uppercase tracking-[0.18em] text-faint">
+              <span className="h-1.5 w-1.5 rounded-full bg-faint" />
+              Telegram delivery — soon
             </span>
           </div>
         </article>
       )}
-    </main>
+    </Shell>
   );
 }

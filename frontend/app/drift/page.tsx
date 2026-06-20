@@ -1,16 +1,24 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import {
+  Shell,
+  PageHeader,
+  AccentButton,
+  Thinking,
+  StateNote,
+  Arrow,
+} from "../ui";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type Align = { goal: string; status: string; note: string };
 
-// on-track = ink, drifting = accent, stalled = faint. No banned hues.
-const STATUS_CLASS: Record<string, string> = {
-  "on-track": "text-ink",
-  drifting: "text-accent",
-  stalled: "text-faint",
+// on-track = bright ink, drifting = accent, stalled = faint. No banned hues.
+const STATUS_META: Record<string, { text: string; dot: string }> = {
+  "on-track": { text: "text-ink", dot: "bg-ink" },
+  drifting: { text: "text-accent", dot: "bg-accent" },
+  stalled: { text: "text-faint", dot: "bg-faint" },
 };
 
 export default function Drift() {
@@ -67,30 +75,34 @@ export default function Drift() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-2xl flex-col px-6 py-12 sm:py-16">
-      <header className="mb-12 sm:mb-16">
-        <h1 className="font-display text-4xl font-medium leading-none tracking-tight text-ink sm:text-5xl">
-          Drift
-        </h1>
-        <p className="mt-4 max-w-md text-[0.95rem] leading-relaxed text-muted">
-          Set what matters to you. Lucid checks whether your days are actually
-          moving toward it.
-        </p>
-      </header>
+    <Shell>
+      <PageHeader
+        kicker="Accountability"
+        title="Drift"
+        lead="State what matters once. Lucid checks whether your days are actually moving toward it — or quietly drifting away."
+      />
 
-      <section>
-        <h2 className="mb-5 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-faint">
+      <section className="rise">
+        <p className="kicker mb-5 flex items-center gap-2.5 text-faint">
+          <span className="h-px w-6 bg-line-2" />
           Your goals
-        </h2>
+        </p>
+
         {goals.length > 0 && (
-          <ul className="mb-6 divide-y divide-line border-y border-line">
+          <ul className="mb-5 grid gap-2.5">
             {goals.map((g, i) => (
-              <li key={i} className="flex items-center justify-between py-3">
-                <span className="text-[0.95rem] text-ink">{g}</span>
+              <li
+                key={i}
+                className="card flex items-center justify-between gap-4 px-5 py-3.5"
+              >
+                <span className="flex items-center gap-3 text-[0.96rem] text-ink">
+                  <span className="h-1.5 w-1.5 rounded-full bg-accent/60" />
+                  {g}
+                </span>
                 <button
                   onClick={() => remove(i)}
                   aria-label={`Remove goal: ${g}`}
-                  className="cursor-pointer text-[0.7rem] font-medium uppercase tracking-[0.15em] text-faint transition-colors hover:text-accent"
+                  className="cursor-pointer font-mono text-[0.62rem] uppercase tracking-[0.15em] text-faint transition-colors hover:text-accent"
                 >
                   Remove
                 </button>
@@ -99,8 +111,9 @@ export default function Drift() {
           </ul>
         )}
 
-        <form onSubmit={add} className="group">
-          <div className="flex items-center gap-3 border-b border-ink pb-3 transition-colors focus-within:border-accent">
+        <form onSubmit={add}>
+          <div className="card flex items-center gap-3 px-5 py-3.5 transition-colors focus-within:border-accent">
+            <span className="font-mono text-lg text-faint">+</span>
             <input
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
@@ -109,49 +122,52 @@ export default function Drift() {
             />
             <button
               type="submit"
-              className="shrink-0 cursor-pointer px-2 text-[0.7rem] font-medium uppercase tracking-[0.15em] text-faint transition-colors hover:text-accent"
+              className="shrink-0 cursor-pointer font-mono text-[0.66rem] uppercase tracking-[0.15em] text-faint transition-colors hover:text-accent"
             >
               Add
             </button>
           </div>
         </form>
         {saved && (
-          <p className="mt-3 text-[0.7rem] uppercase tracking-[0.15em] text-faint">
-            Saved
+          <p className="mt-3 font-mono text-[0.62rem] uppercase tracking-[0.15em] text-accent/80">
+            ✓ Saved
           </p>
         )}
       </section>
 
       {goals.length > 0 && (
         <section className="mt-12">
-          <button
-            onClick={check}
-            disabled={checking}
-            className="inline-flex h-11 cursor-pointer items-center gap-2 bg-ink px-6 text-[0.8rem] font-medium uppercase tracking-[0.15em] text-paper transition-colors hover:bg-accent disabled:cursor-default disabled:bg-faint"
-          >
-            {checking ? "Checking…" : "Check my drift"}
-            {!checking && <span aria-hidden="true">&rarr;</span>}
-          </button>
+          <AccentButton onClick={check} disabled={checking}>
+            {checking ? "Checking your drift…" : "Check my drift"}
+            {!checking && <Arrow />}
+          </AccentButton>
 
           {alignment && (
-            <div className="mt-10 border-t border-line" aria-live="polite">
-              {alignment.map((a, i) => (
-                <div key={i} className="border-b border-line py-6">
-                  <div className="flex items-baseline justify-between gap-4">
-                    <h3 className="text-[0.95rem] text-ink">{a.goal}</h3>
-                    <span
-                      className={`shrink-0 text-[0.7rem] font-medium uppercase tracking-[0.15em] ${
-                        STATUS_CLASS[a.status] ?? "text-muted"
-                      }`}
-                    >
-                      {a.status}
-                    </span>
+            <div className="rise mt-10 grid gap-3" aria-live="polite">
+              {alignment.map((a, i) => {
+                const meta = STATUS_META[a.status] ?? {
+                  text: "text-muted",
+                  dot: "bg-muted",
+                };
+                return (
+                  <div key={i} className="card p-6">
+                    <div className="flex items-baseline justify-between gap-4">
+                      <h3 className="text-[1rem] text-ink">{a.goal}</h3>
+                      <span
+                        className={`flex shrink-0 items-center gap-2 font-mono text-[0.62rem] uppercase tracking-[0.16em] ${meta.text}`}
+                      >
+                        <span
+                          className={`h-1.5 w-1.5 rounded-full ${meta.dot}`}
+                        />
+                        {a.status}
+                      </span>
+                    </div>
+                    <p className="mt-2.5 text-[0.94rem] leading-relaxed text-muted">
+                      {a.note}
+                    </p>
                   </div>
-                  <p className="mt-2 text-[0.9rem] leading-relaxed text-muted">
-                    {a.note}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>
@@ -160,9 +176,9 @@ export default function Drift() {
       {error && (
         <p className="mt-8 text-[0.95rem] text-muted">
           Couldn&rsquo;t reach the backend on{" "}
-          <span className="tabular-nums">localhost:8000</span>.
+          <span className="font-mono text-faint">localhost:8000</span>.
         </p>
       )}
-    </main>
+    </Shell>
   );
 }

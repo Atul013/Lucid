@@ -1,10 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import {
+  Shell,
+  PageHeader,
+  AccentButton,
+  Thinking,
+  StateNote,
+  Arrow,
+  Reveal,
+  CountUp,
+} from "../ui";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type Rel = { name: string; kind: string; note: string; count: number };
+
+function initials(name: string): string {
+  return name
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((w) => w[0]?.toUpperCase() ?? "")
+    .join("");
+}
 
 export default function Relationships() {
   const [state, setState] = useState<
@@ -37,78 +55,88 @@ export default function Relationships() {
     }
   }
 
-  return (
-    <main className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-2xl flex-col px-6 py-12 sm:py-16">
-      <header className="mb-12 sm:mb-16">
-        <h1 className="font-display text-4xl font-medium leading-none tracking-tight text-ink sm:text-5xl">
-          Relationships
-        </h1>
-        <p className="mt-4 max-w-md text-[0.95rem] leading-relaxed text-muted">
-          Who fills your inbox, what they mean to you, and how often they reach
-          out.
-        </p>
-      </header>
+  const max = Math.max(1, ...rels.map((r) => r.count));
 
-      {state === "loading" && (
-        <p className="text-[0.95rem] text-faint">Loading&hellip;</p>
-      )}
+  return (
+    <Shell>
+      <PageHeader
+        kicker="Relationship Intelligence"
+        title="People"
+        lead="Who fills your inbox, what they mean to you, and how often they reach out."
+      />
+
+      {state === "loading" && <Thinking label="Reading your relationships…" />}
       {state === "error" && (
-        <p className="text-[0.95rem] text-muted">
+        <StateNote>
           Couldn&rsquo;t reach the backend on{" "}
-          <span className="tabular-nums">localhost:8000</span>.
-        </p>
+          <span className="font-mono text-faint">localhost:8000</span>.
+        </StateNote>
       )}
       {state === "building" && (
-        <p className="text-[0.95rem] text-faint">
-          Reading your relationships&hellip;
-        </p>
+        <Thinking label="Grouping your archive by person…" />
       )}
 
       {state === "empty" && (
-        <div className="border-t border-line pt-10">
-          <p className="max-w-md text-[0.95rem] leading-relaxed text-muted">
+        <div className="card rise max-w-xl p-8 sm:p-10">
+          <p className="text-[1rem] leading-relaxed text-muted">
             Lucid groups your archive by person and characterises each
-            relationship.
+            relationship — the people behind the noise.
           </p>
-          <button
-            onClick={build}
-            className="mt-7 inline-flex h-11 cursor-pointer items-center gap-2 bg-ink px-6 text-[0.8rem] font-medium uppercase tracking-[0.15em] text-paper transition-colors hover:bg-accent"
-          >
+          <AccentButton onClick={build} className="mt-8">
             Map my relationships
-            <span aria-hidden="true">&rarr;</span>
-          </button>
+            <Arrow />
+          </AccentButton>
         </div>
       )}
 
       {state === "ready" && (
-        <>
-          <ul className="divide-y divide-line border-t border-line">
+        <div>
+          <Reveal as="ul" stagger className="grid gap-3">
             {rels.map((r, i) => (
-              <li key={i} className="py-6">
-                <div className="flex items-baseline justify-between gap-4">
-                  <h2 className="font-display text-xl text-ink">{r.name}</h2>
-                  <span className="shrink-0 text-[0.7rem] font-medium uppercase tracking-[0.15em] text-faint">
-                    {r.kind}
-                    <span className="mx-2 text-line">/</span>
-                    <span className="tabular-nums normal-case tracking-normal">
-                      {r.count} email{r.count === 1 ? "" : "s"}
+              <li
+                key={i}
+                className="card flex gap-4 p-6 transition-colors hover:border-line-2"
+              >
+                <span
+                  className="relative grid h-12 w-12 shrink-0 place-items-center rounded-full border border-line-2 font-mono text-[0.8rem] text-accent"
+                  aria-hidden="true"
+                >
+                  <span className="absolute inset-0 rounded-full bg-accent/10 blur-[6px]" />
+                  <span className="relative">{initials(r.name)}</span>
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h2 className="font-display text-xl text-ink">{r.name}</h2>
+                    <span className="shrink-0 font-mono text-[0.62rem] uppercase tracking-[0.15em] text-faint">
+                      {r.kind}
                     </span>
-                  </span>
+                  </div>
+                  <p className="mt-2 text-[0.95rem] leading-relaxed text-muted">
+                    {r.note}
+                  </p>
+                  <div className="mt-3 flex items-center gap-2.5">
+                    <span className="h-1.5 w-28 overflow-hidden rounded-full bg-line">
+                      <span
+                        className="block h-full rounded-full bg-accent/70"
+                        style={{ width: `${(r.count / max) * 100}%` }}
+                      />
+                    </span>
+                    <span className="font-mono text-[0.62rem] uppercase tracking-[0.14em] text-faint">
+                      <CountUp to={r.count} /> email{r.count === 1 ? "" : "s"}
+                    </span>
+                  </div>
                 </div>
-                <p className="mt-2 text-[0.95rem] leading-relaxed text-muted">
-                  {r.note}
-                </p>
               </li>
             ))}
-          </ul>
+          </Reveal>
           <button
             onClick={build}
-            className="mt-8 cursor-pointer text-[0.7rem] font-medium uppercase tracking-[0.15em] text-faint transition-colors hover:text-accent"
+            className="mt-8 cursor-pointer font-mono text-[0.66rem] uppercase tracking-[0.18em] text-faint transition-colors hover:text-accent"
           >
-            Rebuild
+            ↻ Rebuild
           </button>
-        </>
+        </div>
       )}
-    </main>
+    </Shell>
   );
 }

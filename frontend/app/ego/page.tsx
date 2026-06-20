@@ -1,6 +1,16 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import {
+  Shell,
+  PageHeader,
+  AccentButton,
+  Thinking,
+  StateNote,
+  Arrow,
+  Reveal,
+  CountUp,
+} from "../ui";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
@@ -44,85 +54,93 @@ export default function Ego() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-2xl flex-col px-6 py-12 sm:py-16">
-      <header className="mb-12 sm:mb-16">
-        <h1 className="font-display text-4xl font-medium leading-none tracking-tight text-ink sm:text-5xl">
-          Ego
-        </h1>
-        <p className="mt-4 max-w-md text-[0.95rem] leading-relaxed text-muted">
-          What your archive says about you — themes, attention, and the texture
-          of your days.
-        </p>
-      </header>
+    <Shell>
+      <PageHeader
+        kicker="Behavioral Mirror"
+        title="Ego"
+        lead="The patterns a single message can't show you — what holds your attention, and the texture of your days."
+      />
 
-      {state.kind === "loading" && (
-        <p className="text-[0.95rem] text-faint">Loading&hellip;</p>
-      )}
-
+      {state.kind === "loading" && <Thinking label="Loading your patterns…" />}
       {state.kind === "error" && (
-        <p className="text-[0.95rem] leading-relaxed text-muted">
+        <StateNote>
           Couldn&rsquo;t reach the archive. Is the backend running on{" "}
-          <span className="tabular-nums">localhost:8000</span>?
-        </p>
+          <span className="font-mono text-faint">localhost:8000</span>?
+        </StateNote>
+      )}
+      {state.kind === "generating" && (
+        <Thinking label="Reading across your archive… this takes a moment." />
       )}
 
       {state.kind === "empty" && (
-        <div className="border-t border-line pt-10">
-          <p className="max-w-md text-[0.95rem] leading-relaxed text-muted">
-            Ego reads across your archive to surface the patterns you can&rsquo;t
-            see from a single message.
+        <div className="card rise max-w-xl p-8 sm:p-10">
+          <p className="text-[1rem] leading-relaxed text-muted">
+            Ego reads across your whole archive at once and surfaces the
+            patterns you can&rsquo;t see from inside a single conversation.
           </p>
-          <button
-            onClick={analyze}
-            className="mt-7 inline-flex h-11 cursor-pointer items-center gap-2 bg-ink px-6 text-[0.8rem] font-medium uppercase tracking-[0.15em] text-paper transition-colors hover:bg-accent"
-          >
+          <AccentButton onClick={analyze} className="mt-8">
             Analyze my archive
-            <span aria-hidden="true">&rarr;</span>
-          </button>
+            <Arrow />
+          </AccentButton>
         </div>
       )}
 
-      {state.kind === "generating" && (
-        <p className="text-[0.95rem] text-faint">
-          Reading across your archive&hellip; this takes a moment.
-        </p>
-      )}
-
       {state.kind === "done" && <Report data={state.data} onRerun={analyze} />}
-    </main>
+    </Shell>
   );
 }
 
 function Report({ data, onRerun }: { data: Insights; onRerun: () => void }) {
   return (
-    <div>
-      <p className="font-display text-2xl leading-relaxed text-ink">
-        {data.summary}
+    <div className="rise">
+      <div className="card relative overflow-hidden p-8 sm:p-10">
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-6 -top-10 font-display text-[10rem] leading-none text-accent/10 select-none"
+        >
+          ✦
+        </span>
+        <p className="relative font-display text-2xl leading-relaxed text-ink sm:text-[1.7rem]">
+          {data.summary}
+        </p>
+      </div>
+
+      <p className="kicker mb-5 mt-12 flex items-center gap-2.5 text-faint">
+        <span className="h-px w-6 bg-line-2" />
+        {(data.themes ?? []).length} patterns found
       </p>
 
-      <div className="mt-14 border-t border-line">
+      <Reveal as="div" stagger className="grid gap-3 sm:grid-cols-2">
         {(data.themes ?? []).map((t, i) => (
-          <div key={i} className="border-b border-line py-6">
-            <h2 className="text-[0.7rem] font-medium uppercase tracking-[0.2em] text-accent">
-              {t.title}
-            </h2>
-            <p className="mt-2 text-[0.95rem] leading-relaxed text-ink">
+          <div
+            key={i}
+            className="card p-6 transition-colors hover:border-line-2"
+          >
+            <div className="flex items-center gap-3">
+              <span className="font-mono text-[0.7rem] text-accent/70">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <h2 className="font-mono text-[0.68rem] uppercase tracking-[0.18em] text-accent">
+                {t.title}
+              </h2>
+            </div>
+            <p className="mt-3 text-[0.96rem] leading-relaxed text-ink">
               {t.detail}
             </p>
           </div>
         ))}
-      </div>
+      </Reveal>
 
-      <div className="mt-10 flex items-center gap-4">
+      <div className="mt-10 flex items-center gap-5">
         <button
           onClick={onRerun}
-          className="cursor-pointer text-[0.7rem] font-medium uppercase tracking-[0.15em] text-faint transition-colors hover:text-accent"
+          className="cursor-pointer font-mono text-[0.66rem] uppercase tracking-[0.18em] text-faint transition-colors hover:text-accent"
         >
-          Re-analyze
+          ↻ Re-analyze
         </button>
         {data.sample_size && (
-          <span className="text-[0.7rem] uppercase tracking-[0.15em] text-faint">
-            <span className="tabular-nums">{data.sample_size}</span> emails read
+          <span className="font-mono text-[0.66rem] uppercase tracking-[0.18em] text-faint">
+            <CountUp to={data.sample_size} className="text-ink" /> emails read
           </span>
         )}
       </div>
