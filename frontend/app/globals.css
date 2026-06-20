@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  /* Warm paper + ink palette. Deliberately monochrome with a single
+     burnt-sienna accent. No blue / violet / purple anywhere. */
+  --color-paper: #faf8f4;
+  --color-ink: #1b1714;
+  --color-muted: #6c655d;
+  --color-faint: #9b938a;
+  --color-line: #e7e1d8;
+  --color-accent: #b4470f;
+
+  --font-display: var(--font-display);
+  --font-sans: var(--font-sans);
+}
+
+html {
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Editorial selection */
+::selection {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
