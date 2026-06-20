@@ -155,7 +155,7 @@ function Constellation({ graph }: { graph: Graph }) {
     // Scatter nodes across a disc so they settle organically, not on a ring.
     const nodes: Sim[] = graph.nodes.map((n, i) => {
       const a = (i / graph.nodes.length) * Math.PI * 2 + Math.random();
-      const rad = 60 + Math.random() * 140;
+      const rad = 20 + Math.random() * 90;
       return {
         ...n,
         x: W / 2 + Math.cos(a) * rad,
@@ -179,10 +179,9 @@ function Constellation({ graph }: { graph: Graph }) {
     function step() {
       const cx = W / 2;
       const cy = H / 2;
-      // Elliptical "bowl" the nodes float inside — margins leave room for
-      // labels, so nothing clips and there are no hard walls to slam into.
-      const rx = W / 2 - 90;
-      const ry = H / 2 - 56;
+      // A CIRCULAR region (not the wide canvas) so nodes gather in a round,
+      // organic cluster with generous margins — never a rectangle of edges.
+      const R = Math.min(W, H) / 2 - 64;
       for (const n of nodes) {
         let fx = 0;
         let fy = 0;
@@ -191,21 +190,24 @@ function Constellation({ graph }: { graph: Graph }) {
           const dx = n.x - m.x;
           const dy = n.y - m.y;
           const d2 = dx * dx + dy * dy + 0.01;
-          const f = 2600 / d2;
+          // short-range repulsion only — keeps nodes from overlapping without
+          // blasting them to the boundary
+          const f = Math.min(40, 900 / d2);
           fx += f * dx;
           fy += f * dy;
         }
-        // gentle pull to centre + a touch of life so it never freezes
-        fx += (cx - n.x) * 0.01 + (Math.random() - 0.5) * 0.25;
-        fy += (cy - n.y) * 0.01 + (Math.random() - 0.5) * 0.25;
-        n.vx = (n.vx + fx) * 0.85;
-        n.vy = (n.vy + fy) * 0.85;
+        // firm pull to centre (this is what makes it clump, not spread)
+        fx += (cx - n.x) * 0.03 + (Math.random() - 0.5) * 0.2;
+        fy += (cy - n.y) * 0.03 + (Math.random() - 0.5) * 0.2;
+        n.vx = (n.vx + fx) * 0.88;
+        n.vy = (n.vy + fy) * 0.88;
       }
       for (const { a, b } of edges) {
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
-        const diff = (d - 130) * 0.018;
+        // connected nodes pull together into clumps
+        const diff = (d - 70) * 0.04;
         const ux = dx / d;
         const uy = dy / d;
         a.vx += ux * diff;
@@ -216,21 +218,21 @@ function Constellation({ graph }: { graph: Graph }) {
       for (const n of nodes) {
         n.x += n.vx;
         n.y += n.vy;
-        // soft radial containment: ease back in past the ellipse edge
-        const ex = (n.x - cx) / rx;
-        const ey = (n.y - cy) / ry;
-        const dist = Math.hypot(ex, ey);
-        if (dist > 1) {
-          n.x = cx + (ex / dist) * rx;
-          n.y = cy + (ey / dist) * ry;
-          n.vx *= -0.4;
-          n.vy *= -0.4;
+        // soft circular containment — a spring, not a wall, so nodes never
+        // line up on a hard edge
+        const dx = n.x - cx;
+        const dy = n.y - cy;
+        const dist = Math.hypot(dx, dy) || 0.01;
+        if (dist > R) {
+          const pull = (dist - R) * 0.06;
+          n.vx -= (dx / dist) * pull;
+          n.vy -= (dy / dist) * pull;
         }
       }
     }
 
     function clip(label: string): string {
-      return label.length > 22 ? label.slice(0, 21).trimEnd() + "…" : label;
+      return label.length > 16 ? label.slice(0, 15).trimEnd() + "…" : label;
     }
 
     function draw() {
