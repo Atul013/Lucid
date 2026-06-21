@@ -34,7 +34,7 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| WhatsApp (`whatsapp-web.js`) | 📋 Todo | — | — | QR scan → real-time message stream (spare SIM for bot output) |
+| WhatsApp (`whatsapp-web.js`) | 🔄 Ongoing | Atul013 | feature/whatsapp-connector | Node.js microservice bridge; spare SIM Business account set up |
 | Gmail | ✅ Done | Atul013 | feature/gmail-connector | Gmail API + Google OAuth + sync |
 | Telegram | 📋 Todo | — | — | Official Telegram API — dual role: data source + briefing output channel |
 | Google Keep | 📋 Todo | — | — | Google API |
@@ -104,4 +104,5 @@
 | 2026-06-20 | Atul013 | Started Dashboard layout (shared nav) |
 | 2026-06-20 | ZayedBH | Started UI redesign — dark console theme (feature/ui-dark-console) |
 | 2026-06-20 | Atul013 | Batch: voice, knowledge graph, relationships, emotion timeline, briefing, expo prep |
+| 2026-06-21 | Atul013 | Started WhatsApp connector (Node.js bridge, Business account on spare SIM) |
 
