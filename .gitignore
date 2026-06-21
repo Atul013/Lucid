@@ -9,4 +9,3 @@ tokens.json
 
 # WhatsApp session (contains auth credentials — never commit)
 backend/whatsapp_service/.wwebjs_auth/
-backend/whatsapp_service/.env
