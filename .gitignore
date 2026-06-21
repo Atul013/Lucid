@@ -6,3 +6,9 @@ node_modules/
 .next/
 chroma_data/
 tokens.json
+ego_insights.json
+goals.json
+graph.json
+relationships.json
+timeline.json
+briefing.json
