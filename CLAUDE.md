@@ -46,11 +46,26 @@ feature/drift-alerts
 feature/gmail-connector
 ```
 
+Always branch off `development` (not `main`) so you include all work that has already landed:
+
 ```bash
-git checkout main
-git pull origin main
+git checkout development
+git pull origin development
 git checkout -b feature/<component-name>
 ```
+
+> **Why development, not main?** `main` only receives periodic stable cuts. `development` is where all merged feature work lives. Branching from `main` means your branch is missing everything teammates have already shipped, which causes conflicts on merge.
+
+### Step 2b — Keep your branch up to date
+
+If `development` moves forward while you're working, rebase before opening your PR:
+
+```bash
+git fetch origin
+git rebase origin/development
+```
+
+Resolve any conflicts, then push with `--force-with-lease`.
 
 ### Step 3 — Do the work
 
@@ -72,6 +87,10 @@ git push origin feature/<component-name>
 ### Step 6 — On merge
 
 Once the PR is merged into `development`, update `PROGRESS.md` on main: set status to `✅ Done`
+
+### Step 7 — Periodic development → main cut
+
+When a meaningful batch of features has accumulated on `development` and been tested, open a PR from `development` → `main`. This is a stable release cut — do it deliberately, not automatically after every merge.
 
 ---
 
