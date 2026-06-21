@@ -1,8 +1,22 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const LUCID_WA = "919995265115";
+
+const WA_GREETINGS = [
+  "Hey Lucid, connect me!",
+  "Hi Lucid!",
+  "Hello Lucid, I'm in.",
+  "Hey — connect my archive.",
+  "Lucid, let's go.",
+];
+
+function waLink() {
+  const text = WA_GREETINGS[Math.floor(Math.random() * WA_GREETINGS.length)];
+  return `https://wa.me/${LUCID_WA}?text=${encodeURIComponent(text)}`;
+}
 
 type Result = {
   text: string;
@@ -43,7 +57,15 @@ type State =
 
 export default function Archive() {
   const [state, setState] = useState<State>({ kind: "idle" });
+  const [waReady, setWaReady] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    fetch(`${API}/whatsapp/status`)
+      .then((r) => r.json())
+      .then((d) => setWaReady(d.ready === true))
+      .catch(() => {});
+  }, []);
 
   async function search(e: React.FormEvent) {
     e.preventDefault();
@@ -78,6 +100,40 @@ export default function Archive() {
           keywords.
         </p>
       </header>
+
+      {/* Sources strip */}
+      <div className="mb-10 flex flex-wrap items-center gap-4 border-b border-line pb-6">
+        <span className="text-[0.65rem] font-medium uppercase tracking-[0.18em] text-faint">
+          Sources
+        </span>
+        {/* Gmail — always shown as connected once they've synced */}
+        <span className="flex items-center gap-1.5 text-[0.75rem] text-muted">
+          <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+          Gmail
+        </span>
+        {/* WhatsApp */}
+        {waReady ? (
+          <span className="flex items-center gap-1.5 text-[0.75rem] text-muted">
+            <span className="h-1.5 w-1.5 rounded-full bg-accent" />
+            WhatsApp
+          </span>
+        ) : (
+          <a
+            href={waLink()}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => {
+              // Regenerate link on each click so the greeting is always fresh
+              (e.currentTarget as HTMLAnchorElement).href = waLink();
+            }}
+            className="flex items-center gap-1.5 text-[0.75rem] text-faint transition-colors hover:text-ink"
+          >
+            <span className="h-1.5 w-1.5 rounded-full bg-line" />
+            Connect WhatsApp
+            <span aria-hidden="true" className="ml-0.5 text-[0.65rem]">↗</span>
+          </a>
+        )}
+      </div>
 
       <form onSubmit={search} className="group relative">
         <label htmlFor="q" className="sr-only">
