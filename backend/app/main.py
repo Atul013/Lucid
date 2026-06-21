@@ -7,6 +7,7 @@ import os
 load_dotenv()
 
 from app.routers.gmail import router as gmail_router
+from app.routers.whatsapp import router as whatsapp_router
 
 app = FastAPI(title="Lucid API", docs_url=None, redoc_url=None)
 
@@ -19,6 +20,7 @@ app.add_middleware(
 )
 
 app.include_router(gmail_router)
+app.include_router(whatsapp_router)
 
 
 @app.get("/docs", include_in_schema=False)
