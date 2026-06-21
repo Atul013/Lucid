@@ -1,17 +1,39 @@
 @import "tailwindcss";
 
+/* ============================================================
+   Lucid — dark luminous "intelligence console"
+   Warm near-black canvas · single amber glow · editorial serif.
+   Deliberately monochrome + one warm accent. No blue / violet.
+   ============================================================ */
+
 @theme {
-  /* Warm paper + ink palette. Deliberately monochrome with a single
-     burnt-sienna accent. No blue / violet / purple anywhere. */
-  --color-paper: #faf8f4;
-  --color-ink: #1b1714;
-  --color-muted: #6c655d;
-  --color-faint: #9b938a;
-  --color-line: #e7e1d8;
-  --color-accent: #b4470f;
+  /* Surfaces */
+  --color-paper: #0c0a09; /* base canvas */
+  --color-surface: #15110e; /* raised panel */
+  --color-surface-2: #1c1714; /* hover / nested */
+
+  /* Ink */
+  --color-ink: #f4ede2; /* primary text — warm off-white */
+  --color-muted: #b0a596; /* secondary */
+  --color-faint: #756a5d; /* tertiary / labels */
+
+  /* Lines */
+  --color-line: #2a2320; /* hairline border */
+  --color-line-2: #38302b; /* stronger divider */
+
+  /* Accent — luminous amber */
+  --color-accent: #ff7d3c;
+  --color-accent-soft: #ffa169;
+  --color-accent-deep: #b4470f;
+
+  /* Status (data viz) — stay in the warm/mono family */
+  --color-good: #f4ede2; /* on-track = bright ink */
+  --color-warn: #ff7d3c; /* drifting = accent */
+  --color-idle: #756a5d; /* stalled = faint */
 
   --font-display: var(--font-display);
   --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
 html {
@@ -23,39 +45,308 @@ body {
   background: var(--color-paper);
   color: var(--color-ink);
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
+  position: relative;
+  min-height: 100dvh;
   overflow-x: hidden;
+}
+
+/* Ambient light — two soft amber glows + a cool depth pool, fixed behind all
+   content. Gives the canvas a cinematic, hand-lit feel. */
+body::before {
+  content: "";
+  position: fixed;
+  inset: -20%;
+  z-index: -2;
+  background:
+    radial-gradient(
+      60rem 60rem at 12% -10%,
+      rgba(255, 125, 60, 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      50rem 50rem at 105% 8%,
+      rgba(255, 125, 60, 0.1),
+      transparent 55%
+    ),
+    radial-gradient(
+      70rem 50rem at 50% 120%,
+      rgba(60, 40, 28, 0.5),
+      transparent 60%
+    );
+  pointer-events: none;
+  animation: aurora 22s ease-in-out infinite alternate;
+  will-change: transform;
+}
+
+/* The light source breathes and drifts — the canvas feels hand-lit. */
+@keyframes aurora {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(2.5%, -2%, 0) scale(1.08);
+  }
+  100% {
+    transform: translate3d(-2%, 2.5%, 0) scale(1.04);
+  }
+}
+
+/* Fine film grain — kills banding on the gradients, adds analog texture. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.04;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Editorial selection */
 ::selection {
-  background: var(--color-ink);
-  color: var(--color-paper);
+  background: var(--color-accent);
+  color: #1a0f08;
 }
 
-/* Scrollbar that matches the paper/ink palette */
-html {
+/* Slim, themed scrollbar */
+* {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-faint) transparent;
+  scrollbar-color: var(--color-line-2) transparent;
 }
-::-webkit-scrollbar {
-  width: 12px;
-  height: 12px;
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
 }
-::-webkit-scrollbar-track {
-  background: var(--color-paper);
+*::-webkit-scrollbar-thumb {
+  background: var(--color-line-2);
+  border-radius: 99px;
 }
-::-webkit-scrollbar-thumb {
-  background: var(--color-faint);
-  border-radius: 999px;
-  border: 3px solid var(--color-paper);
+
+/* ---- Reusable surfaces ---------------------------------------------------- */
+
+/* Raised glass panel — machined-hardware feel: hairline border, top
+   highlight, inner ring, and a soft diffused shadow (no harsh drop). */
+.card {
+  position: relative;
+  border-radius: 1.25rem;
+  border: 1px solid var(--color-line);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.03),
+      rgba(255, 255, 255, 0) 42%
+    ),
+    var(--color-surface);
+  box-shadow:
+    0 1px 0 0 rgba(255, 255, 255, 0.05) inset,
+    0 0 0 1px rgba(255, 255, 255, 0.015) inset,
+    0 30px 60px -32px rgba(0, 0, 0, 0.85);
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-ink);
+
+/* Cursor-following spotlight — a soft amber light pools under the pointer
+   on hover. --mx/--my are set in px by the global pointer handler. */
+.card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: radial-gradient(
+    16rem circle at var(--mx, 50%) var(--my, 50%),
+    rgba(255, 125, 60, 0.13),
+    transparent 60%
+  );
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  pointer-events: none;
+}
+.card:hover::after {
+  opacity: 1;
+}
+/* Keep real content above the spotlight layer. */
+.card > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Double-bezel outer shell — wrap a .card in this for hero containers so
+   it reads like a glass plate sitting in an aluminium tray. */
+.bezel {
+  border-radius: 1.6rem;
+  border: 1px solid var(--color-line);
+  background: rgba(255, 255, 255, 0.018);
+  padding: 0.4rem;
+}
+.bezel > .card {
+  border-radius: 1.25rem;
+}
+
+/* Hairline that catches the light (use as a section rule). */
+.rule {
+  height: 1px;
+  border: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--color-line-2) 18%,
+    var(--color-line-2) 82%,
+    transparent
+  );
+}
+
+/* Eyebrow / kicker label — the console voice. */
+.kicker {
+  font-family: var(--font-mono), ui-monospace, monospace;
+  font-size: 0.66rem;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+}
+
+/* Primary action — luminous amber with a real glow. */
+.btn-accent {
+  background: linear-gradient(180deg, var(--color-accent-soft), var(--color-accent));
+  color: #1a0f08;
+  box-shadow:
+    0 0 0 1px rgba(255, 125, 60, 0.4),
+    0 10px 30px -8px rgba(255, 125, 60, 0.5);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.25s ease,
+    filter 0.2s ease;
+}
+.btn-accent:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+  box-shadow:
+    0 0 0 1px rgba(255, 125, 60, 0.6),
+    0 16px 40px -8px rgba(255, 125, 60, 0.65);
+}
+.btn-accent:active {
+  transform: translateY(0);
+}
+
+/* Quiet/ghost action. */
+.btn-ghost {
+  border: 1px solid var(--color-line-2);
+  color: var(--color-muted);
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+.btn-ghost:hover {
+  color: var(--color-ink);
+  border-color: var(--color-accent);
+  background: rgba(255, 125, 60, 0.06);
+}
+
+/* Amber text glow for emphasis. */
+.glow-text {
+  text-shadow: 0 0 24px rgba(255, 125, 60, 0.45);
+}
+
+/* ---- Motion --------------------------------------------------------------- */
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.rise {
+  animation: rise 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 1;
+    box-shadow: 0 0 0 0 rgba(255, 125, 60, 0.5);
+  }
+  50% {
+    opacity: 0.7;
+    box-shadow: 0 0 0 6px rgba(255, 125, 60, 0);
+  }
+}
+.pulse-dot {
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  100% {
+    background-position: 200% 0;
+  }
+}
+.shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-surface) 25%,
+    var(--color-surface-2) 37%,
+    var(--color-surface) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+
+/* Infinite connector marquee (duplicate the track for a seamless loop). */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 30s linear infinite;
+}
+.marquee:hover {
+  animation-play-state: paused;
+}
+.marquee-mask {
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 12%,
+    #000 88%,
+    transparent
+  );
+}
+
+/* Slow bob for the scroll cue. */
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.5;
+  }
+  50% {
+    transform: translateY(6px);
+    opacity: 1;
+  }
+}
+.bob {
+  animation: bob 1.8s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  * {
+  *,
+  *::before,
+  *::after {
     animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
 }

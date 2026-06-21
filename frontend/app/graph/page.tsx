@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { Shell, PageHeader, AccentButton, Thinking, StateNote, Arrow } from "../ui";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 const COLORS = {
-  paper: "#faf8f4",
-  ink: "#1b1714",
-  accent: "#b4470f",
-  faint: "#9b938a",
-  line: "#e7e1d8",
+  ink: "#f4ede2",
+  accent: "#ff7d3c",
+  accentSoft: "#ffa169",
+  faint: "#756a5d",
+  edge: "rgba(180,160,140,0.16)",
 };
 
 type Node = {
@@ -55,70 +56,64 @@ export default function GraphPage() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100dvh-4rem)] max-w-4xl flex-col px-6 py-12 sm:py-16">
-      <header className="mb-8">
-        <h1 className="font-display text-4xl font-medium leading-none tracking-tight text-ink sm:text-5xl">
-          Constellation
-        </h1>
-        <p className="mt-4 max-w-md text-[0.95rem] leading-relaxed text-muted">
-          The people and themes in your archive, and how they connect.
-        </p>
-      </header>
+    <Shell width="wide">
+      <PageHeader
+        kicker="Knowledge Graph"
+        title="Constellation"
+        lead="The people and themes that fill your archive, and the quiet lines that connect them. Hover any star to trace its links."
+      />
 
-      {state === "loading" && (
-        <p className="text-[0.95rem] text-faint">Loading&hellip;</p>
-      )}
+      {state === "loading" && <Thinking label="Loading your constellation…" />}
       {state === "error" && (
-        <p className="text-[0.95rem] text-muted">
+        <StateNote>
           Couldn&rsquo;t reach the backend on{" "}
-          <span className="tabular-nums">localhost:8000</span>.
-        </p>
+          <span className="font-mono text-faint">localhost:8000</span>.
+        </StateNote>
       )}
       {state === "building" && (
-        <p className="text-[0.95rem] text-faint">
-          Mapping your archive&hellip; this takes a moment.
-        </p>
+        <Thinking label="Mapping your archive… this takes a moment." />
       )}
+
       {state === "empty" && (
-        <div className="border-t border-line pt-10">
-          <p className="max-w-md text-[0.95rem] leading-relaxed text-muted">
-            Build a living map of who and what fills your archive.
+        <div className="card rise max-w-xl p-8 sm:p-10">
+          <p className="text-[1rem] leading-relaxed text-muted">
+            Build a living map of who and what fills your archive — a
+            constellation that settles into shape as it loads.
           </p>
-          <button
-            onClick={build}
-            className="mt-7 inline-flex h-11 cursor-pointer items-center gap-2 bg-ink px-6 text-[0.8rem] font-medium uppercase tracking-[0.15em] text-paper transition-colors hover:bg-accent"
-          >
+          <AccentButton onClick={build} className="mt-8">
             Build constellation
-            <span aria-hidden="true">&rarr;</span>
-          </button>
+            <Arrow />
+          </AccentButton>
         </div>
       )}
 
       {state === "ready" && graph && (
-        <>
-          <Constellation graph={graph} />
-          <div className="mt-6 flex items-center gap-6">
+        <div className="rise">
+          <div className="card overflow-hidden p-2">
+            <Constellation graph={graph} />
+          </div>
+          <div className="mt-5 flex items-center gap-6">
             <Legend color={COLORS.ink} label="People" />
             <Legend color={COLORS.accent} label="Themes" />
             <button
               onClick={build}
-              className="ml-auto cursor-pointer text-[0.7rem] font-medium uppercase tracking-[0.15em] text-faint transition-colors hover:text-accent"
+              className="ml-auto cursor-pointer font-mono text-[0.66rem] uppercase tracking-[0.18em] text-faint transition-colors hover:text-accent"
             >
-              Rebuild
+              ↻ Rebuild
             </button>
           </div>
-        </>
+        </div>
       )}
-    </main>
+    </Shell>
   );
 }
 
 function Legend({ color, label }: { color: string; label: string }) {
   return (
-    <span className="flex items-center gap-2 text-[0.7rem] font-medium uppercase tracking-[0.15em] text-faint">
+    <span className="flex items-center gap-2 font-mono text-[0.62rem] uppercase tracking-[0.15em] text-faint">
       <span
         className="h-2 w-2 rounded-full"
-        style={{ backgroundColor: color }}
+        style={{ backgroundColor: color, boxShadow: `0 0 8px ${color}` }}
         aria-hidden="true"
       />
       {label}
@@ -185,15 +180,11 @@ function Constellation({ graph }: { graph: Graph }) {
       const cx = W / 2;
       const cy = H / 2;
       const scale = scaleNow();
-      // round cluster region, with margin reserved for node + label
       const R = Math.min(W, H) / 2 - (44 * scale + 22);
       const MAX = 6;
 
-      // When a node is focused (tapped/clicked), its neighbourhood spreads out
-      // for readability and everything unrelated eases to the periphery.
       const focus = selectedRef.current;
       const fNbrs = focus ? neighbours.get(focus) : null;
-      // stronger repulsion while focused so labels/lines stop overlapping
       const repel = (focus ? 1500 : 700) * scale;
 
       for (const n of nodes) {
@@ -217,7 +208,6 @@ function Constellation({ graph }: { graph: Graph }) {
             fx += (cx - n.x) * 0.015;
             fy += (cy - n.y) * 0.015;
           } else {
-            // push the unrelated nodes outward, out of the way
             const dx = n.x - cx;
             const dy = n.y - cy;
             const d = Math.hypot(dx, dy) || 0.01;
@@ -225,7 +215,6 @@ function Constellation({ graph }: { graph: Graph }) {
             fy += (dy / d) * 1.6 + (cy - n.y) * 0.004;
           }
         } else {
-          // firm pull to centre keeps it a clump, not a scatter
           fx += (cx - n.x) * 0.045 + (Math.random() - 0.5) * 0.2 * scale;
           fy += (cy - n.y) * 0.045 + (Math.random() - 0.5) * 0.2 * scale;
         }
@@ -236,7 +225,6 @@ function Constellation({ graph }: { graph: Graph }) {
         const dx = b.x - a.x;
         const dy = b.y - a.y;
         const d = Math.hypot(dx, dy) || 0.01;
-        // focused node's edges sit longer so its neighbours fan out around it
         const touchesFocus = focus && (a.id === focus || b.id === focus);
         const rest = (touchesFocus ? 120 : 64) * scale;
         const diff = (d - rest) * 0.04;
@@ -248,7 +236,6 @@ function Constellation({ graph }: { graph: Graph }) {
         b.vy -= uy * diff;
       }
       for (const n of nodes) {
-        // clamp speed so a node can never get launched off-screen
         const sp = Math.hypot(n.vx, n.vy);
         if (sp > MAX) {
           n.vx = (n.vx / sp) * MAX;
@@ -256,7 +243,6 @@ function Constellation({ graph }: { graph: Graph }) {
         }
         n.x += n.vx;
         n.y += n.vy;
-        // hard circular boundary — nothing ever leaves the disc
         const dx = n.x - cx;
         const dy = n.y - cy;
         const dist = Math.hypot(dx, dy) || 0.01;
@@ -283,9 +269,9 @@ function Constellation({ graph }: { graph: Graph }) {
       // edges
       for (const { a, b } of edges) {
         const active = hovered && (a.id === hovered || b.id === hovered);
-        ctx.globalAlpha = active ? 0.9 : hovered ? 0.12 : 0.38;
-        ctx.strokeStyle = active ? COLORS.accent : COLORS.faint;
-        ctx.lineWidth = active ? 1.3 : 0.7;
+        ctx.globalAlpha = active ? 0.9 : hovered ? 0.12 : 0.5;
+        ctx.strokeStyle = active ? COLORS.accent : COLORS.edge;
+        ctx.lineWidth = active ? 1.5 : 0.8;
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
@@ -303,7 +289,7 @@ function Constellation({ graph }: { graph: Graph }) {
         ctx.globalAlpha = focused ? 1 : 0.25;
 
         ctx.shadowColor = color;
-        ctx.shadowBlur = (n.id === hovered ? 22 : focused ? 11 : 0) * scale;
+        ctx.shadowBlur = (n.id === hovered ? 22 : focused ? isPerson ? 10 : 16 : 0) * scale;
         ctx.beginPath();
         ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2);
         ctx.fillStyle = color;
@@ -321,7 +307,7 @@ function Constellation({ graph }: { graph: Graph }) {
         }
 
         ctx.font = `${isPerson ? 600 : 500} ${fontPx}px "Hanken Grotesk", sans-serif`;
-        ctx.fillStyle = color;
+        ctx.fillStyle = isPerson ? COLORS.ink : COLORS.accentSoft;
         ctx.fillText(trim(n.label), n.x, n.y + n.r + fontPx);
         ctx.globalAlpha = 1;
       }
@@ -333,7 +319,6 @@ function Constellation({ graph }: { graph: Graph }) {
       step();
       draw();
       ticks++;
-      // Reduced motion: settle quickly then hold.
       if (!(reduced && ticks > 120)) raf = requestAnimationFrame(loop);
     }
     loop();
@@ -355,7 +340,6 @@ function Constellation({ graph }: { graph: Graph }) {
       if (reduced) draw();
     }
 
-    // Tap / click a node to focus it (toggles); tapping empty space clears.
     function onTap(e: PointerEvent) {
       const found = nodeAt(e.clientX, e.clientY);
       selectedRef.current = selectedRef.current === found ? null : found;
@@ -377,7 +361,7 @@ function Constellation({ graph }: { graph: Graph }) {
   return (
     <canvas
       ref={canvasRef}
-      className="h-[68vh] min-h-[460px] w-full touch-none"
+      className="h-[68vh] min-h-[460px] w-full touch-none rounded-[0.85rem]"
       role="img"
       aria-label="Force-directed graph of people and themes in your archive"
     />
