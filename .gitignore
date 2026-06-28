@@ -12,3 +12,10 @@ graph.json
 relationships.json
 timeline.json
 briefing.json
+
+# WhatsApp bridge — session auth (Chromium profile) and local deps
+backend/whatsapp_service/.wwebjs_auth/
+backend/whatsapp_service/node_modules/
+
+# Local session notes (gitignored context file)
+SESSION_NOTES.md
