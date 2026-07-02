@@ -22,9 +22,11 @@
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
 | Project setup & folder structure | ✅ Done | Atul013 | feature/project-setup | Next.js + FastAPI scaffold |
-| ChromaDB setup | 🔄 Ongoing | Atul013 | feature/chromadb-ingestion | Local vector DB |
-| Ingestion pipeline (chunk + embed) | 🔄 Ongoing | Atul013 | feature/chromadb-ingestion | Depends on ChromaDB |
+| ChromaDB setup | ✅ Done | Atul013 | feature/chromadb-ingestion | Local vector DB (PersistentClient) |
+| Ingestion pipeline (chunk + embed) | ✅ Done | Atul013 | feature/chromadb-ingestion | Embeds via MiniLM, stores in ChromaDB |
 | Google OAuth | ✅ Done | Atul013 | feature/gmail-connector | Needed for Gmail, Keep, Calendar |
+| Deployment — Vercel (FE) + Azure (BE) | 📋 Todo | — | — | Split deploy: FE free on Vercel, BE on Azure B1s. Budget: ₹9,569 Azure credit must last until Apr 2027. FE reads NEXT_PUBLIC_API_URL; BE CORS via ALLOWED_ORIGINS |
+| Dockerization | 📋 Todo | — | — | Deferred. backend/Dockerfile + compose exist but unused for split deploy; revisit if BE needs containerizing on Azure |
 
 ---
 
@@ -32,9 +34,10 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| WhatsApp (`whatsapp-web.js`) | 📋 Todo | — | — | QR scan → real-time message stream (spare SIM for bot output) |
-| Gmail | 🔄 Ongoing | Atul013 | feature/gmail-connector | Gmail API + Google OAuth |
-| Telegram | 📋 Todo | — | — | Official Telegram API — dual role: data source + briefing output channel |
+| WhatsApp (`whatsapp-web.js`) | 🔄 Ongoing | Atul013 | feature/whatsapp-connector | Node.js microservice bridge; spare SIM Business account set up |
+| Gmail | ✅ Done | Atul013 | feature/gmail-connector | Gmail API + Google OAuth + sync |
+| Telegram | 🔄 Ongoing | Atul013 | feature/telegram-connector | Official Telegram API — dual role: data source + briefing output channel |
+| Financial data (mock CSV) | 🔄 Ongoing | Am4l-babu | feature/financial-ingestion | Bank-statement CSV parser → categorize spending → ChromaDB |
 | Google Keep | 📋 Todo | — | — | Google API |
 | Notion | 📋 Todo | — | — | Notion API |
 | Discord | 📋 Todo | — | — | Discord bot API |
@@ -47,16 +50,16 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| Archive — semantic search | 📋 Todo | — | — | Query vector DB via LLM |
-| Archive — chat UI | 📋 Todo | — | — | Depends on semantic search |
-| Archive — voice interface | 📋 Todo | — | — | Whisper STT → piped into Archive query |
-| Ego — analysis job | 📋 Todo | — | — | Scheduled LLM pattern finder |
-| Ego — insights dashboard | 📋 Todo | — | — | Depends on analysis job |
-| Ego — emotion timeline | 📋 Todo | — | — | Sentiment tracking across sources visualized over time |
-| Drift — goals input | 📋 Todo | — | — | User sets goals once |
-| Drift — deviation alerts | 📋 Todo | — | — | Depends on Ego + goals input |
-| Relationship Intelligence | 📋 Todo | — | — | 4th AI layer — tracks how relationships evolve over time across sources |
-| Morning Briefing | 📋 Todo | — | — | Telegram bot delivers daily AI-generated briefing from Archive + Ego + Drift |
+| Archive — semantic search | 🔄 Ongoing | Atul013 | feature/archive-llm-chat | RAG: vector search + NVIDIA NIM (minimax-m3) |
+| Archive — chat UI | 🔄 Ongoing | Atul013 | feature/archive-llm-chat | Ask-mode answers w/ sources |
+| Archive — voice interface | 🔄 Ongoing | Atul013 | feature/archive-voice | Browser-native speech → Archive query (no key) |
+| Ego — analysis job | 🔄 Ongoing | Atul013 | feature/ego-insights | On-demand LLM pattern finder over archive |
+| Ego — insights dashboard | 🔄 Ongoing | Atul013 | feature/ego-insights | Renders Ego analysis output |
+| Ego — emotion timeline | 🔄 Ongoing | Atul013 | feature/emotion-timeline | LLM sentiment per day → SVG timeline |
+| Drift — goals input | 🔄 Ongoing | Atul013 | feature/drift-goals | User sets goals once |
+| Drift — deviation alerts | 🔄 Ongoing | Atul013 | feature/drift-goals | LLM aligns goals vs archive activity |
+| Relationship Intelligence | 🔄 Ongoing | Atul013 | feature/relationship-intelligence | LLM over top senders → relationship notes |
+| Morning Briefing | 🔄 Ongoing | Atul013 | feature/morning-briefing | LLM briefing (Archive+Ego+Drift) + Today view; Telegram delivery deferred (needs bot token) |
 
 ---
 
@@ -64,14 +67,15 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| Dashboard layout | 📋 Todo | — | — | Main shell, navigation |
-| Connectors page | 📋 Todo | — | — | Connect/disconnect data sources |
-| Archive chat page | 📋 Todo | — | — | |
-| Ego insights page | 📋 Todo | — | — | |
-| Drift goals page | 📋 Todo | — | — | |
-| Relationship Intelligence page | 📋 Todo | — | — | |
-| Emotion Timeline page | 📋 Todo | — | — | Sentiment graph over time |
-| Visual Knowledge Graph | 📋 Todo | — | — | Animated constellation of topics/people/connections — expo showstopper |
+| UI Redesign — dark console theme | 🔄 Ongoing | ZayedBH | feature/ui-dark-console | Full dark redesign: WebGL shader hero, GSAP animations, Lenis scroll, 8-route landing |
+| Dashboard layout | 🔄 Ongoing | Atul013 | feature/dashboard-layout | Shared nav across Archive · Ego · Drift |
+| Connectors page | 👀 In Review | Atul013 | feature/connectors-onboarding | Connect Gmail + sync flow (first-run onboarding) |
+| Archive chat page | ✅ Done | Atul013 | feature/archive-search-ui | Editorial minimalist search UI over /gmail/search |
+| Ego insights page | 🔄 Ongoing | Atul013 | feature/ego-insights | /ego route |
+| Drift goals page | 🔄 Ongoing | Atul013 | feature/drift-goals | /drift route |
+| Relationship Intelligence page | 🔄 Ongoing | Atul013 | feature/relationship-intelligence | /relationships route |
+| Emotion Timeline page | 🔄 Ongoing | Atul013 | feature/emotion-timeline | /timeline route |
+| Visual Knowledge Graph | 🔄 Ongoing | Atul013 | feature/knowledge-graph | Animated force-directed constellation (canvas) |
 
 ---
 
@@ -79,8 +83,8 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| UI polish | 📋 Todo | — | — | |
-| Expo demo prep | 📋 Todo | — | — | Script + mock data |
+| UI polish | 🔄 Ongoing | Atul013 | feature/ui-polish | Mobile-safe nav, consistency pass |
+| Expo demo prep | 🔄 Ongoing | Atul013 | feature/expo-prep | Demo script + mock-data seed + deployment guide |
 
 ---
 
@@ -92,4 +96,17 @@
 | 2026-06-16 | Atul013 | Started project setup & folder structure |
 | 2026-06-16 | Atul013 | Started Gmail connector |
 | 2026-06-16 | Atul013 | Started ChromaDB setup + ingestion pipeline |
+| 2026-06-28 | Atul013 | Opened PR #22 (connectors page) → development |
+| 2026-06-28 | Atul013 | Started Telegram connector |
+| 2026-06-20 | Atul013 | Decided split deploy (Vercel FE + Azure BE); dockerization deferred |
+| 2026-06-20 | Atul013 | UI polish — mobile-safe nav |
+| 2026-06-20 | Atul013 | Started Connect Gmail + sync onboarding flow |
+| 2026-06-20 | Atul013 | Started Archive LLM (RAG via NVIDIA NIM) + chat/ask UI |
+| 2026-06-20 | Atul013 | Started Ego analysis job + insights page |
+| 2026-06-20 | Atul013 | Started Drift goals input + alignment check |
+| 2026-06-20 | Atul013 | Started Dashboard layout (shared nav) |
+| 2026-06-20 | ZayedBH | Started UI redesign — dark console theme (feature/ui-dark-console) |
+| 2026-06-20 | Atul013 | Batch: voice, knowledge graph, relationships, emotion timeline, briefing, expo prep |
+| 2026-06-21 | Atul013 | Started WhatsApp connector (Node.js bridge, Business account on spare SIM) |
+| 2026-07-02 | Am4l-babu | Started financial data connector (mock CSV ingestion) |
 
