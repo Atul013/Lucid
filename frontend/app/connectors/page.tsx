@@ -27,6 +27,11 @@ async function jsonOrThrow(r: Response) {
   return d;
 }
 
+// Status probes must never hang a card on "Checking…" — a firewall that
+// silently drops packets would otherwise leave the connect form unreachable.
+const statusFetch = (path: string) =>
+  fetch(`${API}${path}`, { signal: AbortSignal.timeout(5000) });
+
 // ── Individual connector states ──────────────────────────────────────────────
 
 function useGmail() {
@@ -35,7 +40,7 @@ function useGmail() {
   const [synced, setSynced] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch(`${API}/gmail/status`)
+    statusFetch("/gmail/status")
       .then((r) => r.json())
       .then((d) => setStatus(d.connected ? "connected" : "disconnected"))
       .catch(() => setStatus("error"));
@@ -61,7 +66,7 @@ function useWhatsApp() {
   const [status, setStatus] = useState<Status>("checking");
 
   useEffect(() => {
-    fetch(`${API}/whatsapp/status`)
+    statusFetch("/whatsapp/status")
       .then((r) => r.json())
       .then((d) => setStatus(d.ready ? "connected" : "disconnected"))
       .catch(() => setStatus("disconnected"));
@@ -78,7 +83,7 @@ function useTelegram() {
   const [note, setNote] = useState<string | null>(null);
 
   function refresh() {
-    fetch(`${API}/telegram/status`)
+    statusFetch("/telegram/status")
       .then((r) => r.json())
       .then((d) => {
         setStatus(d.connected ? "connected" : "disconnected");
