@@ -37,12 +37,12 @@
 | WhatsApp (`whatsapp-web.js`) | 🔄 Ongoing | Atul013 | feature/whatsapp-connector | Node.js microservice bridge; spare SIM Business account set up |
 | Gmail | ✅ Done | Atul013 | feature/gmail-connector | Gmail API + Google OAuth + sync |
 | Telegram | 🔄 Ongoing | Atul013 | feature/telegram-connector | Official Telegram API — dual role: data source + briefing output channel |
-| Financial data (mock CSV) | 👀 In Review | Am4l-babu | feature/financial-ingestion | Bank-statement CSV parser → categorize spending → ChromaDB (PR #23) |
-| Health data (mock smartwatch JSON) | 👀 In Review | Am4l-babu | feature/health-ingestion | Sleep, HRV, steps → ChromaDB + sentiment correlation (PR #25) |
+| Financial data (mock CSV) | ✅ Done | Am4l-babu | feature/financial-ingestion | Bank-statement CSV parser → categorize spending → ChromaDB (PR #23) |
+| Health data (mock smartwatch JSON) | ✅ Done | Am4l-babu | feature/health-ingestion | Sleep, HRV, steps → ChromaDB + sentiment correlation (PR #25) |
 | Google Keep | 📋 Todo | — | — | Google API |
 | Notion | 📋 Todo | — | — | Notion API |
 | Discord | 📋 Todo | — | — | Discord bot API |
-| Google Calendar | 👀 In Review | Am4l-babu | feature/calendar-connector | Event ingestion + weekly workload analysis (PR #27) |
+| Google Calendar | ✅ Done | Am4l-babu | feature/calendar-connector | Event ingestion + weekly workload analysis (PR #27) |
 | Local Notes (Obsidian etc.) | 📋 Todo | — | — | Watch local folder for .md files |
 
 ---
@@ -70,7 +70,7 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| Malayalam/Manglish sentiment | 👀 In Review | Am4l-babu | feature/malayalam-sentiment | Code-mixed lexicon engine + optional Indic transformer (PR #26) |
+| Malayalam/Manglish sentiment | ✅ Done | Am4l-babu | feature/malayalam-sentiment | Code-mixed lexicon engine + optional Indic transformer (PR #26) |
 | Digital Twin — simulation engine | 📋 Todo | Am4l-babu | — | simulate_workload(): goal-drift/stress probability from calendar + health history |
 | Autonomous agent loop | 📋 Todo | — | — | LangChain tool-use: draft follow-ups, calendar optimization |
 | SNN tripwire | 📋 Todo | — | — | LIF/Norse spiking net over temporal metadata; wakes LLM on anomaly |
@@ -134,4 +134,5 @@
 | 2026-07-02 | Am4l-babu | Opened PR #26 (malayalam sentiment) → development |
 | 2026-07-02 | Am4l-babu | Started Google Calendar connector |
 | 2026-07-02 | Am4l-babu | Opened PR #27 (calendar connector) → development |
+| 2026-07-02 | Am4l-babu | PRs #23, #25, #26, #27 merged — finance, health, sentiment, calendar done |
 
