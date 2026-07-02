@@ -28,6 +28,7 @@ def connect(body: ConnectBody):
         info = telegram_connector.connect(body.bot_token, body.chat_id)
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    telegram_connector.start_poller()
     return {"connected": True, **info}
 
 
@@ -38,13 +39,18 @@ def status():
 
 @router.post("/sync")
 def sync():
-    """Pull new messages sent to the bot and ingest them into the archive."""
+    """Pull new messages into the archive. When the live bot is polling it
+    already archives everything in real time, so sync just reports that."""
+    if telegram_connector.poller_running():
+        s = telegram_connector.status()
+        return {"live": True, "fetched": 0, "ingested": 0,
+                "total_archived": s["synced_messages"]}
     try:
         messages = telegram_connector.fetch_updates()
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
     ingested = chroma.ingest_messages(messages)
-    return {"fetched": len(messages), "ingested": ingested}
+    return {"live": False, "fetched": len(messages), "ingested": ingested}
 
 
 @router.post("/send")
@@ -67,6 +73,7 @@ def set_chat_id(body: ChatIdBody):
 
 @router.delete("/disconnect")
 def disconnect():
+    telegram_connector.stop_poller()
     telegram_connector.disconnect()
     return {"connected": False}
 

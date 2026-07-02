@@ -125,6 +125,8 @@ function useTelegram() {
       const d = await jsonOrThrow(
         await fetch(`${API}/telegram/sync`, { method: "POST" }),
       );
+      if (d.live)
+        return `✓ Live bot is on — archiving in real time (${d.total_archived} so far). Try /todo in the chat.`;
       return d.fetched === 0
         ? "✓ Synced — no new messages (message your bot first)"
         : `✓ ${d.ingested} messages archived`;

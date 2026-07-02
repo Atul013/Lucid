@@ -54,6 +54,25 @@ That sync does two things: archives your message, and **learns your chat ID** so
 
 ---
 
+## The live bot — todos from your chat
+
+While the backend is running, the bot is **live**: it answers commands instantly and archives everything else automatically (no manual Sync needed).
+
+| Command | What it does |
+|---|---|
+| `/todo` (or `/list`) | Show your todo list |
+| `/add buy milk` | Add an item |
+| `/done 2` | Check off item 2 |
+| `/undo 2` | Uncheck it |
+| `/edit 2 call the bank` | Rewrite item 2 |
+| `/del 2` | Remove item 2 |
+| `/clear` | Drop all checked items |
+| `/help` | Show this list |
+
+Item numbers are the positions shown by `/todo`. The same list is available on the API — `GET /todos`, `POST /todos`, `PATCH /todos/{n}`, `DELETE /todos/{n}` — so the web app can render it too. Any non-command message is saved to your archive and acknowledged.
+
+---
+
 ## Step 4 — (Optional) Add the bot to a group
 
 To archive a group chat (e.g. your project group):

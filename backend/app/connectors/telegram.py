@@ -9,6 +9,8 @@ paste the token in the Connectors UI. See docs/connect/TELEGRAM_CONNECT.md.
 
 import hashlib
 import json
+import threading
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -92,6 +94,7 @@ def status() -> dict:
         "chat_id": cfg.get("chat_id"),
         "last_sync": cfg.get("last_sync"),
         "synced_messages": cfg.get("synced_messages", 0),
+        "live": poller_running(),
     }
 
 
@@ -170,3 +173,128 @@ def set_chat_id(chat_id: str):
     cfg["chat_id"] = str(chat_id).strip()
     cfg["chat_id_manual"] = True
     _write_config(cfg)
+
+
+# ── live bot: long-polling loop with commands ────────────────────────────────
+# While the backend runs, the bot answers in real time: todo commands are
+# executed, everything else is archived. Manual /telegram/sync is only the
+# fallback when the poller is not running (two getUpdates consumers conflict).
+
+HELP_TEXT = (
+    "Hi, I'm Lucid. 🌘\n\n"
+    "Todo commands:\n"
+    "/todo — show the list\n"
+    "/add buy milk — add an item\n"
+    "/done 2 — check off item 2\n"
+    "/undo 2 — uncheck it\n"
+    "/edit 2 new text — rewrite it\n"
+    "/del 2 — remove it\n"
+    "/clear — drop all checked items\n\n"
+    "Anything else you send me is saved to your archive."
+)
+
+_POLLER: threading.Thread | None = None
+_POLL_STOP = threading.Event()
+
+
+def _handle_command(text: str) -> str:
+    from app.connectors import todos
+
+    parts = text.split(maxsplit=1)
+    cmd = parts[0].lower().split("@")[0]  # strip /cmd@BotName used in groups
+    arg = parts[1].strip() if len(parts) > 1 else ""
+
+    try:
+        if cmd in ("/start", "/help"):
+            return HELP_TEXT
+        if cmd in ("/todo", "/todos", "/list"):
+            return todos.render()
+        if cmd == "/add":
+            if not arg:
+                return "What should I add? Try: /add buy milk"
+            todos.add(arg)
+            return todos.render()
+        if cmd in ("/done", "/undo", "/del", "/delete", "/edit"):
+            num_part = arg.split(maxsplit=1)
+            if not num_part or not num_part[0].isdigit():
+                return f"Which item? Try: {cmd} 2"
+            n = int(num_part[0])
+            if cmd == "/done":
+                todos.set_done(n, True)
+            elif cmd == "/undo":
+                todos.set_done(n, False)
+            elif cmd == "/edit":
+                if len(num_part) < 2:
+                    return "New text missing. Try: /edit 2 call the bank"
+                todos.edit(n, num_part[1])
+            else:
+                todos.delete(n)
+            return todos.render()
+        if cmd == "/clear":
+            removed = todos.clear_done()
+            return f"Cleared {removed} done item(s).\n\n" + todos.render()
+        return "I don't know that command — /help lists what I can do."
+    except ValueError as e:
+        return str(e)
+
+
+def _process_update(u: dict, cfg: dict) -> None:
+    from app.connectors import chroma
+
+    msg = u.get("message") or {}
+    record = _normalize(msg)
+    if not record:
+        return
+    if msg.get("chat", {}).get("type") == "private" and not cfg.get("chat_id_manual"):
+        cfg["chat_id"] = record["chat_id"]
+
+    text = record["text"]
+    if text.startswith("/"):
+        reply = _handle_command(text)
+    else:
+        chroma.ingest_messages([record])
+        cfg["synced_messages"] = cfg.get("synced_messages", 0) + 1
+        reply = "Saved to your archive. 📥  (/help for commands)"
+    try:
+        _call("sendMessage", cfg["bot_token"], chat_id=record["chat_id"], text=reply)
+    except ValueError:
+        pass  # reply failures must not kill the poller
+
+
+def _poll_loop():
+    while not _POLL_STOP.is_set():
+        cfg = _read_config()
+        token = cfg.get("bot_token")
+        if not token:
+            return
+        try:
+            params = {"timeout": 25, "allowed_updates": ["message"]}
+            offset = cfg.get("last_update_id")
+            if offset is not None:
+                params["offset"] = offset + 1
+            updates = _call("getUpdates", token, **params)
+            for u in updates:
+                cfg["last_update_id"] = u["update_id"]
+                _process_update(u, cfg)
+            if updates:
+                cfg["last_sync"] = datetime.now(timezone.utc).isoformat()
+                _write_config(cfg)
+        except ValueError:
+            time.sleep(5)  # network hiccup or Telegram error — retry calmly
+
+
+def start_poller():
+    global _POLLER
+    if not is_connected() or (_POLLER and _POLLER.is_alive()):
+        return
+    _POLL_STOP.clear()
+    _POLLER = threading.Thread(target=_poll_loop, name="telegram-poller", daemon=True)
+    _POLLER.start()
+
+
+def stop_poller():
+    _POLL_STOP.set()
+
+
+def poller_running() -> bool:
+    return bool(_POLLER and _POLLER.is_alive())

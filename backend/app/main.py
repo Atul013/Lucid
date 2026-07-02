@@ -19,8 +19,16 @@ from app.routers.sentiment import router as sentiment_router
 from app.routers.health import router as health_router
 from app.routers.finance import router as finance_router
 from app.routers.telegram import router as telegram_router
+from app.routers.todos import router as todos_router
+from app.connectors import telegram as telegram_connector
 
 app = FastAPI(title="Lucid API", docs_url=None, redoc_url=None)
+
+
+@app.on_event("startup")
+def start_telegram_bot():
+    # Resume the live Telegram bot (todo commands + archiving) if connected.
+    telegram_connector.start_poller()
 
 app.add_middleware(
     CORSMiddleware,
@@ -43,6 +51,7 @@ app.include_router(sentiment_router)
 app.include_router(health_router)
 app.include_router(finance_router)
 app.include_router(telegram_router)
+app.include_router(todos_router)
 
 
 @app.get("/docs", include_in_schema=False)
