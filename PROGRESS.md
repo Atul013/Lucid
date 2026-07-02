@@ -36,8 +36,8 @@
 |---|---|---|---|---|
 | WhatsApp (`whatsapp-web.js`) | 🔄 Ongoing | Atul013 | feature/whatsapp-connector | Node.js microservice bridge; spare SIM Business account set up |
 | Gmail | ✅ Done | Atul013 | feature/gmail-connector | Gmail API + Google OAuth + sync |
-| Telegram | 🔄 Ongoing | Am4l-babu | feature/telegram-connector | Bot API connector: paste token in UI → sync messages + send briefings; taken over from Atul013 (no branch pushed) |
-| Connectors UI — easy connect + guides | 🔄 Ongoing | Am4l-babu | feature/telegram-connector | Live credential forms on /connectors (Telegram token, Calendar sync, Finance/Health upload) + docs/connect guides |
+| Telegram | 👀 In Review | Am4l-babu | feature/telegram-connector | Bot API connector: paste token in UI → sync messages + send briefings (PR #28); taken over from Atul013 (no branch pushed) |
+| Connectors UI — easy connect + guides | 👀 In Review | Am4l-babu | feature/telegram-connector | Live credential forms on /connectors (Telegram token, Calendar sync, Finance/Health upload) + docs/connect guides (PR #28) |
 | Financial data (mock CSV) | ✅ Done | Am4l-babu | feature/financial-ingestion | Bank-statement CSV parser → categorize spending → ChromaDB (PR #23) |
 | Health data (mock smartwatch JSON) | ✅ Done | Am4l-babu | feature/health-ingestion | Sleep, HRV, steps → ChromaDB + sentiment correlation (PR #25) |
 | Google Keep | 📋 Todo | — | — | Google API |
@@ -137,4 +137,5 @@
 | 2026-07-02 | Am4l-babu | Opened PR #27 (calendar connector) → development |
 | 2026-07-02 | Am4l-babu | PRs #23, #25, #26, #27 merged — finance, health, sentiment, calendar done |
 | 2026-07-02 | Am4l-babu | Took over Telegram connector (Atul013 had it marked, no branch pushed) + connectors UI easy-connect rework + setup guides |
+| 2026-07-02 | Am4l-babu | Opened PR #28 (telegram connector + connectors UI + docs/connect guides) → development |
 
