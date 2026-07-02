@@ -15,6 +15,7 @@ from app.routers.relationships import router as relationships_router
 from app.routers.timeline import router as timeline_router
 from app.routers.briefing import router as briefing_router
 from app.routers.health import router as health_router
+from app.routers.finance import router as finance_router
 
 app = FastAPI(title="Lucid API", docs_url=None, redoc_url=None)
 
@@ -35,6 +36,7 @@ app.include_router(briefing_router)
 app.include_router(ego_router)
 app.include_router(drift_router)
 app.include_router(health_router)
+app.include_router(finance_router)
 
 
 @app.get("/docs", include_in_schema=False)
