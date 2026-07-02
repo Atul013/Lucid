@@ -37,6 +37,7 @@
 | WhatsApp (`whatsapp-web.js`) | 🔄 Ongoing | Atul013 | feature/whatsapp-connector | Node.js microservice bridge; spare SIM Business account set up |
 | Gmail | ✅ Done | Atul013 | feature/gmail-connector | Gmail API + Google OAuth + sync |
 | Telegram | 🔄 Ongoing | Atul013 | feature/telegram-connector | Official Telegram API — dual role: data source + briefing output channel |
+| Financial data (mock CSV) | 🔄 Ongoing | Am4l-babu | feature/financial-ingestion | Bank-statement CSV parser → categorize spending → ChromaDB |
 | Google Keep | 📋 Todo | — | — | Google API |
 | Notion | 📋 Todo | — | — | Notion API |
 | Discord | 📋 Todo | — | — | Discord bot API |
@@ -107,4 +108,5 @@
 | 2026-06-20 | ZayedBH | Started UI redesign — dark console theme (feature/ui-dark-console) |
 | 2026-06-20 | Atul013 | Batch: voice, knowledge graph, relationships, emotion timeline, briefing, expo prep |
 | 2026-06-21 | Atul013 | Started WhatsApp connector (Node.js bridge, Business account on spare SIM) |
+| 2026-07-02 | Am4l-babu | Started financial data connector (mock CSV ingestion) |
 
