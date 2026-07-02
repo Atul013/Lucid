@@ -42,7 +42,7 @@
 | Google Keep | 📋 Todo | — | — | Google API |
 | Notion | 📋 Todo | — | — | Notion API |
 | Discord | 📋 Todo | — | — | Discord bot API |
-| Google Calendar | 📋 Todo | — | — | Google API |
+| Google Calendar | 🔄 Ongoing | Am4l-babu | feature/calendar-connector | Google API + mock events; workload history for the Twin |
 | Local Notes (Obsidian etc.) | 📋 Todo | — | — | Watch local folder for .md files |
 
 ---
@@ -132,4 +132,5 @@
 | 2026-07-02 | Am4l-babu | Opened PR #25 (health ingestion) → development |
 | 2026-07-02 | Am4l-babu | Started Malayalam/Manglish sentiment module |
 | 2026-07-02 | Am4l-babu | Opened PR #26 (malayalam sentiment) → development |
+| 2026-07-02 | Am4l-babu | Started Google Calendar connector |
 
