@@ -11,6 +11,7 @@ const LINKS = [
   { href: "/graph", label: "Graph" },
   { href: "/relationships", label: "People" },
   { href: "/timeline", label: "Timeline" },
+  { href: "/connectors", label: "Sources" },
 ];
 
 export default function Nav() {
