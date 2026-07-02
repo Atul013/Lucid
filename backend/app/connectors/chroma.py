@@ -77,6 +77,12 @@ if MOCK_MODE:
     def sample(limit: int = 60) -> list[dict]:
         return _read_db()[:limit]
 
+    HEALTH_MOCK_FILE = Path("health_mock_db.json")
+
+    def _read_health_db() -> list[dict]:
+        if HEALTH_MOCK_FILE.exists():
+            try:
+                return json.loads(HEALTH_MOCK_FILE.read_text(encoding="utf-8"))
     FINANCE_MOCK_FILE = Path("finance_mock_db.json")
 
     def _read_finance_db() -> list[dict]:
@@ -87,6 +93,33 @@ if MOCK_MODE:
                 return []
         return []
 
+    def ingest_health(records: list[dict]) -> int:
+        if not records:
+            return 0
+        by_id = {r["id"]: r for r in _read_health_db()}
+        for r in records:
+            by_id[r["id"]] = r
+        HEALTH_MOCK_FILE.write_text(
+            json.dumps(sorted(by_id.values(), key=lambda r: r["date"]), indent=2),
+            encoding="utf-8",
+        )
+        return len(records)
+
+    def search_health(query: str, n_results: int = 10) -> list[dict]:
+        db = _read_health_db()
+        if not query:
+            return db[:n_results]
+        q_words = [w.lower() for w in query.split() if len(w) > 2] or [query.lower()]
+        scored = sorted(
+            ((sum(1 for qw in q_words if qw in r["text"].lower()), r) for r in db),
+            key=lambda x: x[0],
+            reverse=True,
+        )
+        results = [r for score, r in scored if score > 0] or [r for _, r in scored]
+        return results[:n_results]
+
+    def all_health() -> list[dict]:
+        return _read_health_db()
     def _write_finance_db(data: list[dict]):
         FINANCE_MOCK_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
@@ -148,6 +181,33 @@ else:
             for d, m in zip(data["documents"], data["metadatas"])
         ]
 
+    def _health_collection():
+        return _CLIENT.get_or_create_collection("health")
+
+    def ingest_health(records: list[dict]) -> int:
+        if not records:
+            return 0
+        _health_collection().upsert(
+            ids=[r["id"] for r in records],
+            documents=[r["text"] for r in records],
+            metadatas=[{k: v for k, v in r.items() if k not in ("id", "text")} for r in records],
+        )
+        return len(records)
+
+    def search_health(query: str, n_results: int = 10) -> list[dict]:
+        results = _health_collection().query(query_texts=[query], n_results=n_results)
+        docs = results["documents"][0]
+        metas = results["metadatas"][0]
+        ids = results["ids"][0]
+        return [{"id": i, "text": d, **m} for i, d, m in zip(ids, docs, metas)]
+
+    def all_health() -> list[dict]:
+        """Every daily record, for summary/correlation jobs (not a query)."""
+        data = _health_collection().get(include=["documents", "metadatas"])
+        return [
+            {"id": i, "text": d, **m}
+            for i, d, m in zip(data["ids"], data["documents"], data["metadatas"])
+        ]
     def _transactions():
         return _CLIENT.get_or_create_collection("transactions")
 
