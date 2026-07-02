@@ -18,6 +18,7 @@ from app.routers.calendar import router as calendar_router
 from app.routers.sentiment import router as sentiment_router
 from app.routers.health import router as health_router
 from app.routers.finance import router as finance_router
+from app.routers.telegram import router as telegram_router
 
 app = FastAPI(title="Lucid API", docs_url=None, redoc_url=None)
 
@@ -41,6 +42,7 @@ app.include_router(calendar_router)
 app.include_router(sentiment_router)
 app.include_router(health_router)
 app.include_router(finance_router)
+app.include_router(telegram_router)
 
 
 @app.get("/docs", include_in_schema=False)

@@ -186,6 +186,44 @@ if MOCK_MODE:
     def all_events() -> list[dict]:
         return _read_events_db()
 
+    MESSAGES_MOCK_FILE = Path("messages_mock_db.json")
+
+    def _read_messages_db() -> list[dict]:
+        if MESSAGES_MOCK_FILE.exists():
+            try:
+                return json.loads(MESSAGES_MOCK_FILE.read_text(encoding="utf-8"))
+            except Exception:
+                return []
+        return []
+
+    def ingest_messages(messages: list[dict]) -> int:
+        if not messages:
+            return 0
+        by_id = {m["id"]: m for m in _read_messages_db()}
+        for m in messages:
+            by_id[m["id"]] = m
+        MESSAGES_MOCK_FILE.write_text(
+            json.dumps(sorted(by_id.values(), key=lambda m: m.get("datetime", m["date"])), indent=2),
+            encoding="utf-8",
+        )
+        return len(messages)
+
+    def search_messages(query: str, n_results: int = 10) -> list[dict]:
+        db = _read_messages_db()
+        if not query:
+            return db[:n_results]
+        q_words = [w.lower() for w in query.split() if len(w) > 2] or [query.lower()]
+        scored = sorted(
+            ((sum(1 for qw in q_words if qw in m["text"].lower()), m) for m in db),
+            key=lambda x: x[0],
+            reverse=True,
+        )
+        results = [m for score, m in scored if score > 0] or [m for _, m in scored]
+        return results[:n_results]
+
+    def all_messages() -> list[dict]:
+        return _read_messages_db()
+
 else:
     _CLIENT = chromadb.PersistentClient(path=os.getenv("CHROMA_PATH", "chroma_data"))
 
@@ -305,6 +343,34 @@ else:
     def all_events() -> list[dict]:
         """Every event, for workload/summary jobs (not a query)."""
         data = _events_collection().get(include=["documents", "metadatas"])
+        return [
+            {"id": i, "text": d, **m}
+            for i, d, m in zip(data["ids"], data["documents"], data["metadatas"])
+        ]
+
+    def _messages_collection():
+        return _CLIENT.get_or_create_collection("messages")
+
+    def ingest_messages(messages: list[dict]) -> int:
+        if not messages:
+            return 0
+        _messages_collection().upsert(
+            ids=[m["id"] for m in messages],
+            documents=[m["text"] for m in messages],
+            metadatas=[{k: v for k, v in m.items() if k not in ("id", "text")} for m in messages],
+        )
+        return len(messages)
+
+    def search_messages(query: str, n_results: int = 10) -> list[dict]:
+        results = _messages_collection().query(query_texts=[query], n_results=n_results)
+        docs = results["documents"][0]
+        metas = results["metadatas"][0]
+        ids = results["ids"][0]
+        return [{"id": i, "text": d, **m} for i, d, m in zip(ids, docs, metas)]
+
+    def all_messages() -> list[dict]:
+        """Every chat message, for sentiment/analysis jobs (not a query)."""
+        data = _messages_collection().get(include=["documents", "metadatas"])
         return [
             {"id": i, "text": d, **m}
             for i, d, m in zip(data["ids"], data["documents"], data["metadatas"])
