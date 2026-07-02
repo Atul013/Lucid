@@ -9,6 +9,9 @@ chroma_mock_db.json
 calendar_mock_db.json
 health_mock_db.json
 finance_mock_db.json
+messages_mock_db.json
+telegram_config.json
+todos.json
 tokens.json
 ego_insights.json
 goals.json

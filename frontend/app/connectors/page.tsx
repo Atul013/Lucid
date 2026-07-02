@@ -1,9 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Shell, PageHeader, Reveal, GhostButton } from "../ui";
 
 const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const DOCS = "https://github.com/Atul013/Lucid/blob/development/docs/connect";
 const LUCID_WA = "919995265115";
 
 const WA_GREETINGS = [
@@ -20,6 +21,17 @@ const waLink = () =>
 
 type Status = "checking" | "connected" | "disconnected" | "error";
 
+async function jsonOrThrow(r: Response) {
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.detail ?? `HTTP ${r.status}`);
+  return d;
+}
+
+// Status probes must never hang a card on "Checking…" — a firewall that
+// silently drops packets would otherwise leave the connect form unreachable.
+const statusFetch = (path: string) =>
+  fetch(`${API}${path}`, { signal: AbortSignal.timeout(5000) });
+
 // ── Individual connector states ──────────────────────────────────────────────
 
 function useGmail() {
@@ -28,7 +40,7 @@ function useGmail() {
   const [synced, setSynced] = useState<number | null>(null);
 
   useEffect(() => {
-    fetch(`${API}/gmail/status`)
+    statusFetch("/gmail/status")
       .then((r) => r.json())
       .then((d) => setStatus(d.connected ? "connected" : "disconnected"))
       .catch(() => setStatus("error"));
@@ -54,7 +66,7 @@ function useWhatsApp() {
   const [status, setStatus] = useState<Status>("checking");
 
   useEffect(() => {
-    fetch(`${API}/whatsapp/status`)
+    statusFetch("/whatsapp/status")
       .then((r) => r.json())
       .then((d) => setStatus(d.ready ? "connected" : "disconnected"))
       .catch(() => setStatus("disconnected"));
@@ -63,7 +75,117 @@ function useWhatsApp() {
   return { status };
 }
 
-// ── Connector card ───────────────────────────────────────────────────────────
+function useTelegram() {
+  const [status, setStatus] = useState<Status>("checking");
+  const [botUsername, setBotUsername] = useState<string | null>(null);
+  const [chatId, setChatId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  function refresh() {
+    statusFetch("/telegram/status")
+      .then((r) => r.json())
+      .then((d) => {
+        setStatus(d.connected ? "connected" : "disconnected");
+        setBotUsername(d.bot_username ?? null);
+        setChatId(d.chat_id ?? null);
+      })
+      .catch(() => setStatus("error"));
+  }
+
+  useEffect(refresh, []);
+
+  async function run(fn: () => Promise<string>) {
+    setBusy(true);
+    setNote(null);
+    try {
+      setNote(await fn());
+    } catch (e) {
+      setNote(`✗ ${e instanceof Error ? e.message : "Something went wrong"}`);
+    } finally {
+      setBusy(false);
+      refresh();
+    }
+  }
+
+  const connect = (token: string) =>
+    run(async () => {
+      const d = await jsonOrThrow(
+        await fetch(`${API}/telegram/connect`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bot_token: token }),
+        }),
+      );
+      return `✓ Connected as @${d.bot_username}`;
+    });
+
+  const sync = () =>
+    run(async () => {
+      const d = await jsonOrThrow(
+        await fetch(`${API}/telegram/sync`, { method: "POST" }),
+      );
+      if (d.live)
+        return `✓ Live bot is on — archiving in real time (${d.total_archived} so far). Try /todo in the chat.`;
+      return d.fetched === 0
+        ? "✓ Synced — no new messages (message your bot first)"
+        : `✓ ${d.ingested} messages archived`;
+    });
+
+  const sendTest = () =>
+    run(async () => {
+      await jsonOrThrow(
+        await fetch(`${API}/telegram/send`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: "Lucid is connected. 🌘" }),
+        }),
+      );
+      return "✓ Test message sent — check Telegram";
+    });
+
+  const disconnect = () =>
+    run(async () => {
+      await fetch(`${API}/telegram/disconnect`, { method: "DELETE" });
+      return "Disconnected.";
+    });
+
+  return { status, botUsername, chatId, busy, note, connect, sync, sendTest, disconnect };
+}
+
+function useSeedable(seedPath: string, syncPath?: string) {
+  const [busy, setBusy] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
+
+  async function run(fn: () => Promise<string>) {
+    setBusy(true);
+    setNote(null);
+    try {
+      setNote(await fn());
+    } catch (e) {
+      setNote(`✗ ${e instanceof Error ? e.message : "Something went wrong"}`);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const seed = () =>
+    run(async () => {
+      const d = await jsonOrThrow(await fetch(`${API}${seedPath}`, { method: "POST" }));
+      return `✓ ${d.ingested} records loaded (demo)`;
+    });
+
+  const sync = () =>
+    run(async () => {
+      if (!syncPath) return "";
+      const d = await jsonOrThrow(await fetch(`${API}${syncPath}`));
+      return `✓ ${d.ingested} synced from Google`;
+    });
+
+  return { busy, note, seed, sync, run };
+}
+
+// ── UI bits ──────────────────────────────────────────────────────────────────
 
 function StatusDot({ status }: { status: Status }) {
   const cls =
@@ -82,6 +204,8 @@ function ConnectorCard({
   status,
   actions,
   badge,
+  guide,
+  children,
 }: {
   icon: React.ReactNode;
   name: string;
@@ -89,6 +213,8 @@ function ConnectorCard({
   status: Status;
   actions: React.ReactNode;
   badge?: string;
+  guide?: string;
+  children?: React.ReactNode;
 }) {
   const statusLabel =
     status === "connected"
@@ -116,6 +242,16 @@ function ConnectorCard({
                   {badge}
                 </span>
               )}
+              {guide && (
+                <a
+                  href={`${DOCS}/${guide}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-mono text-[0.55rem] uppercase tracking-[0.2em] text-faint underline decoration-line-2 underline-offset-4 hover:text-muted"
+                >
+                  guide ↗
+                </a>
+              )}
             </div>
             <p className="mt-0.5 text-[0.82rem] leading-relaxed text-muted">
               {description}
@@ -129,10 +265,29 @@ function ConnectorCard({
           </span>
         </div>
       </div>
+      {children}
       <div className="flex flex-wrap items-center gap-2 border-t border-line pt-4">
         {actions}
       </div>
     </div>
+  );
+}
+
+function Note({ children }: { children: React.ReactNode }) {
+  if (!children) return null;
+  return (
+    <span className="w-full font-mono text-[0.62rem] tracking-wide text-muted">
+      {children}
+    </span>
+  );
+}
+
+function CredentialInput(props: React.InputHTMLAttributes<HTMLInputElement>) {
+  return (
+    <input
+      {...props}
+      className="h-10 w-full rounded-lg border border-line-2 bg-surface-2 px-4 font-mono text-[0.72rem] text-ink placeholder:text-faint focus:border-faint focus:outline-none"
+    />
   );
 }
 
@@ -144,11 +299,147 @@ function ComingSoonActions() {
   );
 }
 
+// Hidden file input + button, for upload-style connectors.
+function UploadButton({
+  label,
+  accept,
+  disabled,
+  onFile,
+}: {
+  label: string;
+  accept: string;
+  disabled?: boolean;
+  onFile: (f: File) => void;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  return (
+    <>
+      <input
+        ref={ref}
+        type="file"
+        accept={accept}
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) onFile(f);
+          e.target.value = "";
+        }}
+      />
+      <GhostButton disabled={disabled} onClick={() => ref.current?.click()}>
+        {label}
+      </GhostButton>
+    </>
+  );
+}
+
+// ── Telegram card (token form) ───────────────────────────────────────────────
+
+function TelegramCard() {
+  const tg = useTelegram();
+  const [token, setToken] = useState("");
+  const [showSteps, setShowSteps] = useState(false);
+
+  return (
+    <ConnectorCard
+      icon={<TelegramIcon />}
+      name="Telegram"
+      description="Dual role — messages sent to your bot join the archive, and Lucid replies with briefings and alerts."
+      status={tg.status}
+      guide="TELEGRAM_CONNECT.md"
+      actions={
+        tg.status === "connected" ? (
+          <>
+            <GhostButton onClick={tg.sync} disabled={tg.busy}>
+              {tg.busy ? "Working…" : "Sync messages"}
+            </GhostButton>
+            <GhostButton onClick={tg.sendTest} disabled={tg.busy}>
+              Send test
+            </GhostButton>
+            <GhostButton onClick={tg.disconnect} disabled={tg.busy} className="ml-auto">
+              Disconnect
+            </GhostButton>
+            <Note>
+              @{tg.botUsername}
+              {tg.chatId ? ` · chat ${tg.chatId}` : " · no chat yet — message your bot, then Sync"}
+              {tg.note ? ` — ${tg.note}` : ""}
+            </Note>
+          </>
+        ) : tg.status === "checking" ? (
+          <span className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-faint">
+            Checking…
+          </span>
+        ) : (
+          <div className="flex w-full flex-col gap-3">
+            <div className="flex w-full gap-2">
+              <CredentialInput
+                type="password"
+                placeholder="Bot token from @BotFather — 123456789:AAF…"
+                value={token}
+                onChange={(e) => setToken(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && token.trim()) tg.connect(token);
+                }}
+              />
+              <GhostButton
+                disabled={tg.busy || !token.trim()}
+                onClick={() => tg.connect(token)}
+              >
+                {tg.busy ? "…" : "Connect"}
+              </GhostButton>
+            </div>
+            <button
+              onClick={() => setShowSteps((s) => !s)}
+              className="self-start font-mono text-[0.6rem] uppercase tracking-[0.18em] text-faint underline decoration-line-2 underline-offset-4 hover:text-muted"
+            >
+              {showSteps ? "Hide setup steps" : "No bot yet? 60-second setup ↓"}
+            </button>
+            {showSteps && (
+              <ol className="flex flex-col gap-1.5 text-[0.78rem] leading-relaxed text-muted">
+                <li>1 · Open Telegram, search <span className="text-ink">@BotFather</span>, press Start.</li>
+                <li>2 · Send <span className="font-mono text-ink">/newbot</span> — pick a display name, then a username ending in <span className="font-mono">bot</span>.</li>
+                <li>3 · Copy the token BotFather replies with and paste it above.</li>
+                <li>4 · After connecting: message your new bot anything, hit Sync — Lucid learns your chat and can reply.</li>
+              </ol>
+            )}
+            <Note>{tg.note}</Note>
+          </div>
+        )
+      }
+    />
+  );
+}
+
 // ── Page ────────────────────────────────────────────────────────────────────
 
 export default function ConnectorsPage() {
   const gmail = useGmail();
   const wa = useWhatsApp();
+  const cal = useSeedable("/calendar/seed", "/calendar/sync");
+  const fin = useSeedable("/finance/seed");
+  const health = useSeedable("/health-data/seed");
+
+  const uploadFinance = (f: File) =>
+    fin.run(async () => {
+      const form = new FormData();
+      form.append("file", f);
+      const d = await jsonOrThrow(
+        await fetch(`${API}/finance/upload`, { method: "POST", body: form }),
+      );
+      return `✓ ${d.ingested} transactions from ${f.name}`;
+    });
+
+  const uploadHealth = (f: File) =>
+    health.run(async () => {
+      const payload = JSON.parse(await f.text());
+      const d = await jsonOrThrow(
+        await fetch(`${API}/health-data/upload`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        }),
+      );
+      return `✓ ${d.ingested} days from ${f.name}`;
+    });
 
   return (
     <Shell>
@@ -166,6 +457,7 @@ export default function ConnectorsPage() {
           name="Gmail"
           description="Read-only access to your inbox. Emails are embedded locally — nothing leaves your machine."
           status={gmail.status}
+          guide="GMAIL_CONNECT.md"
           actions={
             gmail.status === "connected" ? (
               <>
@@ -175,15 +467,6 @@ export default function ConnectorsPage() {
                     : gmail.synced !== null
                       ? `✓ ${gmail.synced} indexed`
                       : "Sync now"}
-                </GhostButton>
-                <GhostButton
-                  onClick={() =>
-                    fetch(`${API}/gmail/status`)
-                      .then((r) => r.json())
-                      .then((d) => alert(d.connected ? "Gmail is connected." : "Not connected."))
-                  }
-                >
-                  Test
                 </GhostButton>
                 <a href={`${API}/auth/google`} className="ml-auto">
                   <GhostButton>Reconnect</GhostButton>
@@ -201,12 +484,16 @@ export default function ConnectorsPage() {
           }
         />
 
+        {/* Telegram */}
+        <TelegramCard />
+
         {/* WhatsApp */}
         <ConnectorCard
           icon={<WhatsAppIcon />}
           name="WhatsApp"
           description="Messages from Lucid's business number land in your archive and trigger AI-generated replies."
           status={wa.status}
+          guide="WHATSAPP_CONNECT.md"
           actions={
             wa.status === "connected" ? (
               <>
@@ -242,24 +529,76 @@ export default function ConnectorsPage() {
           }
         />
 
-        {/* Telegram */}
-        <ConnectorCard
-          icon={<TelegramIcon />}
-          name="Telegram"
-          description="Dual role — data source and delivery channel for your morning briefing."
-          status="disconnected"
-          badge="soon"
-          actions={<ComingSoonActions />}
-        />
-
-        {/* Google Calendar */}
+        {/* Google Calendar — reuses the Gmail OAuth connection */}
         <ConnectorCard
           icon={<CalendarIcon />}
           name="Google Calendar"
-          description="Events and scheduling patterns feed into your daily briefing and drift analysis."
-          status="disconnected"
-          badge="soon"
-          actions={<ComingSoonActions />}
+          description="Events and scheduling patterns feed the Digital Twin's workload history and your daily briefing."
+          status={gmail.status}
+          guide="CALENDAR_CONNECT.md"
+          actions={
+            <>
+              {gmail.status === "connected" ? (
+                <GhostButton onClick={cal.sync} disabled={cal.busy}>
+                  {cal.busy ? "Working…" : "Sync Google Calendar"}
+                </GhostButton>
+              ) : (
+                <a href={`${API}/auth/google`}>
+                  <GhostButton>Connect Google →</GhostButton>
+                </a>
+              )}
+              <GhostButton onClick={cal.seed} disabled={cal.busy}>
+                Load demo events
+              </GhostButton>
+              <Note>{cal.note}</Note>
+            </>
+          }
+        />
+
+        {/* Financial data */}
+        <ConnectorCard
+          icon={<FinanceIcon />}
+          name="Bank Statement"
+          description="Upload a statement CSV — spending categories, subscriptions and cash-flow forecast, all parsed locally."
+          status="connected"
+          guide="FINANCE_CONNECT.md"
+          actions={
+            <>
+              <UploadButton
+                label="Upload CSV"
+                accept=".csv,text/csv"
+                disabled={fin.busy}
+                onFile={uploadFinance}
+              />
+              <GhostButton onClick={fin.seed} disabled={fin.busy}>
+                Load demo statement
+              </GhostButton>
+              <Note>{fin.note}</Note>
+            </>
+          }
+        />
+
+        {/* Health data */}
+        <ConnectorCard
+          icon={<HealthIcon />}
+          name="Smartwatch Export"
+          description="Sleep, HRV, steps and stress from a smartwatch JSON export — correlated with your mood timeline."
+          status="connected"
+          guide="HEALTH_CONNECT.md"
+          actions={
+            <>
+              <UploadButton
+                label="Upload JSON"
+                accept=".json,application/json"
+                disabled={health.busy}
+                onFile={uploadHealth}
+              />
+              <GhostButton onClick={health.seed} disabled={health.busy}>
+                Load demo export
+              </GhostButton>
+              <Note>{health.note}</Note>
+            </>
+          }
         />
 
         {/* Notion */}
@@ -331,7 +670,7 @@ function TelegramIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
       <circle cx="12" cy="12" r="9.5" stroke="var(--color-faint)" strokeWidth="1.4"/>
-      <path d="M7 12l3 3 7-7" stroke="var(--color-faint)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
+      <path d="M6.5 12l4 1.5L16 8l-4 5.5 3.5 2.5 2-9.5-11 4.5Z" stroke="var(--color-accent)" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
@@ -341,6 +680,24 @@ function CalendarIcon() {
     <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
       <rect x="3" y="5" width="18" height="16" rx="2" stroke="var(--color-faint)" strokeWidth="1.4"/>
       <path d="M3 10h18M8 3v4M16 3v4" stroke="var(--color-faint)" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function FinanceIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+      <rect x="2" y="6" width="20" height="13" rx="2" stroke="var(--color-faint)" strokeWidth="1.4"/>
+      <path d="M2 10h20" stroke="var(--color-accent)" strokeWidth="1.4"/>
+      <path d="M6 15h5" stroke="var(--color-faint)" strokeWidth="1.4" strokeLinecap="round"/>
+    </svg>
+  );
+}
+
+function HealthIcon() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden="true">
+      <path d="M3 12h4l2-5 3 10 2.5-6.5L16 12h5" stroke="var(--color-accent)" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/>
     </svg>
   );
 }
