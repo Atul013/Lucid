@@ -70,7 +70,7 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| Malayalam/Manglish sentiment | 🔄 Ongoing | Am4l-babu | feature/malayalam-sentiment | Indic-transformer sentiment over archive text; feeds emotion timeline |
+| Malayalam/Manglish sentiment | 👀 In Review | Am4l-babu | feature/malayalam-sentiment | Code-mixed lexicon engine + optional Indic transformer (PR #26) |
 | Digital Twin — simulation engine | 📋 Todo | Am4l-babu | — | simulate_workload(): goal-drift/stress probability from calendar + health history |
 | Autonomous agent loop | 📋 Todo | — | — | LangChain tool-use: draft follow-ups, calendar optimization |
 | SNN tripwire | 📋 Todo | — | — | LIF/Norse spiking net over temporal metadata; wakes LLM on anomaly |
@@ -131,4 +131,5 @@
 | 2026-07-02 | Am4l-babu | Started health data connector (mock smartwatch JSON) |
 | 2026-07-02 | Am4l-babu | Opened PR #25 (health ingestion) → development |
 | 2026-07-02 | Am4l-babu | Started Malayalam/Manglish sentiment module |
+| 2026-07-02 | Am4l-babu | Opened PR #26 (malayalam sentiment) → development |
 
