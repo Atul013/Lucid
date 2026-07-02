@@ -77,6 +77,12 @@ if MOCK_MODE:
     def sample(limit: int = 60) -> list[dict]:
         return _read_db()[:limit]
 
+    EVENTS_MOCK_FILE = Path("calendar_mock_db.json")
+
+    def _read_events_db() -> list[dict]:
+        if EVENTS_MOCK_FILE.exists():
+            try:
+                return json.loads(EVENTS_MOCK_FILE.read_text(encoding="utf-8"))
     HEALTH_MOCK_FILE = Path("health_mock_db.json")
 
     def _read_health_db() -> list[dict]:
@@ -93,6 +99,20 @@ if MOCK_MODE:
                 return []
         return []
 
+    def ingest_events(events: list[dict]) -> int:
+        if not events:
+            return 0
+        by_id = {e["id"]: e for e in _read_events_db()}
+        for e in events:
+            by_id[e["id"]] = e
+        EVENTS_MOCK_FILE.write_text(
+            json.dumps(sorted(by_id.values(), key=lambda e: e["start"]), indent=2),
+            encoding="utf-8",
+        )
+        return len(events)
+
+    def search_events(query: str, n_results: int = 10) -> list[dict]:
+        db = _read_events_db()
     def ingest_health(records: list[dict]) -> int:
         if not records:
             return 0
@@ -111,6 +131,15 @@ if MOCK_MODE:
             return db[:n_results]
         q_words = [w.lower() for w in query.split() if len(w) > 2] or [query.lower()]
         scored = sorted(
+            ((sum(1 for qw in q_words if qw in e["text"].lower()), e) for e in db),
+            key=lambda x: x[0],
+            reverse=True,
+        )
+        results = [e for score, e in scored if score > 0] or [e for _, e in scored]
+        return results[:n_results]
+
+    def all_events() -> list[dict]:
+        return _read_events_db()
             ((sum(1 for qw in q_words if qw in r["text"].lower()), r) for r in db),
             key=lambda x: x[0],
             reverse=True,
@@ -181,6 +210,21 @@ else:
             for d, m in zip(data["documents"], data["metadatas"])
         ]
 
+    def _events_collection():
+        return _CLIENT.get_or_create_collection("events")
+
+    def ingest_events(events: list[dict]) -> int:
+        if not events:
+            return 0
+        _events_collection().upsert(
+            ids=[e["id"] for e in events],
+            documents=[e["text"] for e in events],
+            metadatas=[{k: v for k, v in e.items() if k not in ("id", "text")} for e in events],
+        )
+        return len(events)
+
+    def search_events(query: str, n_results: int = 10) -> list[dict]:
+        results = _events_collection().query(query_texts=[query], n_results=n_results)
     def _health_collection():
         return _CLIENT.get_or_create_collection("health")
 
@@ -201,6 +245,9 @@ else:
         ids = results["ids"][0]
         return [{"id": i, "text": d, **m} for i, d, m in zip(ids, docs, metas)]
 
+    def all_events() -> list[dict]:
+        """Every event, for workload/summary jobs (not a query)."""
+        data = _events_collection().get(include=["documents", "metadatas"])
     def all_health() -> list[dict]:
         """Every daily record, for summary/correlation jobs (not a query)."""
         data = _health_collection().get(include=["documents", "metadatas"])
