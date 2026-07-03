@@ -72,7 +72,7 @@
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
 | Malayalam/Manglish sentiment | ✅ Done | Am4l-babu | feature/malayalam-sentiment | Code-mixed lexicon engine + optional Indic transformer (PR #26) |
-| Digital Twin — simulation engine | 🔄 Ongoing | Am4l-babu | feature/twin-simulation | simulate_workload(): goal-drift/stress probability from calendar + health history |
+| Digital Twin — simulation engine | 👀 In Review | Am4l-babu | feature/twin-simulation | simulate_workload(): stress probability from calendar + health, what-if sliders + risk curves on /twin (PR #30) |
 | Autonomous agent loop | 📋 Todo | — | — | LangChain tool-use: draft follow-ups, calendar optimization |
 | SNN tripwire | 📋 Todo | — | — | LIF/Norse spiking net over temporal metadata; wakes LLM on anomaly |
 | Edge deployment (Pi Zero 2 W) | 📋 Todo | — | — | FastAPI + ChromaDB on Pi, low-RAM tuning |
@@ -140,4 +140,6 @@
 | 2026-07-02 | Am4l-babu | Opened PR #28 (telegram connector + connectors UI + docs/connect guides) → development |
 | 2026-07-03 | Am4l-babu | PR #28 merged — telegram, connectors UI, todos + reminders done |
 | 2026-07-03 | Am4l-babu | Started Digital Twin simulation engine (feature/twin-simulation) |
+| 2026-07-03 | Am4l-babu | Opened PR #29 (todos web page + reminders — commit that missed the PR #28 merge) → development |
+| 2026-07-03 | Am4l-babu | Opened PR #30 (twin simulation engine + /twin what-if UI) → development |
 
