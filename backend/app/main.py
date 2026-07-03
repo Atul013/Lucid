@@ -21,6 +21,7 @@ from app.routers.finance import router as finance_router
 from app.routers.telegram import router as telegram_router
 from app.routers.todos import router as todos_router
 from app.routers.twin import router as twin_router
+from app.routers.agent import router as agent_router
 from app.connectors import telegram as telegram_connector
 from app.connectors import reminders
 
@@ -57,6 +58,7 @@ app.include_router(finance_router)
 app.include_router(telegram_router)
 app.include_router(todos_router)
 app.include_router(twin_router)
+app.include_router(agent_router)
 
 
 @app.get("/docs", include_in_schema=False)

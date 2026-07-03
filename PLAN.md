@@ -12,15 +12,19 @@
 |---|---|
 | 2026-07-02 | **Offline mock mode** committed to main: `chroma.py` falls back to a JSON store when chromadb can't compile (Windows, no C++ build tools); `llm.py` returns Maya-Chen-persona canned replies when `NVIDIA_API_KEY` is unset. App now runs fully out of the box |
 | 2026-07-02 | **Financial data connector** — [PR #23](https://github.com/Atul013/Lucid/pull/23) to `development`. CSV parser (debit/credit or signed-amount formats), keyword categorizer, recurring-subscription detector ($315/mo found in demo data), monthly cash-flow summary + next-month forecast. Endpoints: `POST /finance/upload`, `POST /finance/seed`, `GET /finance/summary`, `GET /finance/search`. 3-month mock statement aligned with the expo persona |
+| 2026-07-02 | **Health connector** (PR #25), **Malayalam/Manglish sentiment** (PR #26), **Google Calendar connector** (PR #27) — all merged; Phase 1 data foundation complete |
+| 2026-07-02 | **Telegram connector + connectors UI + guides** (PR #28) and **todos system with multi-channel reminders** (PR #29) — live bot with /todo commands, web todos page, reminder scheduler (Telegram/WhatsApp/Email/Browser) |
+| 2026-07-03 | **Digital Twin simulation engine** (PR #30) — `simulate_workload()`: logistic stress model over calendar × sleep/HRV (pure-Python fallback, no new deps), what-if sliders + risk curves on `/twin`. Phase 2 gate opened |
+| 2026-07-03 | **Autonomous agent loop** (`feature/agent-loop`) — dependency-free tool-use loop over `llm.py` (no LangChain): investigates twin/calendar/health/archive, then drafts replies, proposes calendar changes, adds todos, sends a Telegram wrap-up. Async runs with step-by-step progress; scripted mock trajectory offline |
 
 Team foundation already in place (Atul013 & ZayedBH): FastAPI + Next.js scaffold, ChromaDB ingestion, Google OAuth, Gmail connector, Archive/Ego/Drift AI layers, dark-console UI — see PROGRESS.md.
 
-## 🔜 Next up (Phase 1 remainder, in order)
+## 🔜 Next up (Phase 3, in order)
 
-1. **Health ingestion** (`feature/health-ingestion`) — mock smartwatch JSON (sleep stages, HRV, resting HR, steps) → `health` collection in ChromaDB + mock mode; `/health-data/seed`, `/health-data/summary` endpoints; correlation hook against email sentiment. Mirrors the finance connector's mock-first shape.
-2. **Malayalam / Manglish sentiment** (`feature/malayalam-sentiment`) — Indic-transformer model (e.g. `ai4bharat/indic-bert` or `l3cube-pune/malayalam-sentiment`) with a lightweight rule-based Manglish fallback for mock mode; score archive text per message/day; feeds the emotion timeline.
-3. **Google Calendar connector** (`feature/calendar-connector`) — OAuth already done; sync events into ChromaDB. This is the prerequisite for the Digital Twin's workload history.
-4. **Phase 2 gate:** with finance + health + calendar + sentiment landed, build `simulate_workload()` (scikit-learn over calendar density × sleep/HRV) and the LangChain agent loop.
+1. **Twin × Briefing integration** — surface the twin's stress forecast and the agent's latest proposals in the Morning Briefing (cheap win, everything shares ChromaDB).
+2. **SNN tripwire prototype** (`feature/snn-tripwire`) — leaky integrate-and-fire layer in pure NumPy over message-timestamp streams; proves the wake-the-LLM anomaly trigger before adopting Norse.
+3. **Scheduled agent runs** — cron/interval trigger for the agent loop (nightly self-review → morning Telegram wrap-up).
+4. **Edge groundwork** — privacy tiering of collections (cloud-ok vs local-only) ahead of the Pi Zero 2 W deployment.
 
 Every component follows the CLAUDE.md workflow: PROGRESS.md → feature branch → PR to `development`.
 
