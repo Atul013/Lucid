@@ -106,7 +106,34 @@ def chat(messages: list[dict], max_tokens: int = 1024, temperature: float = 0.4)
                 ]
             }, indent=2)
 
-        # 7. RAG / Archive Search fallback
+        # 7. Autonomous agent loop — scripted tool-use trajectory keyed on how
+        # many observations the loop has fed back so far, so the mock agent
+        # investigates, simulates, then acts, exactly like the live one would.
+        elif "autonomous agent" in sys_msg:
+            step = sum(1 for m in messages if m["role"] == "user" and m["content"].startswith("Observation:"))
+            script = [
+                {"tool": "stress_forecast", "args": {}},
+                {"tool": "calendar_summary", "args": {}},
+                {"tool": "health_summary", "args": {}},
+                {"tool": "simulate", "args": {"extra_meeting_hours": -5, "sleep_delta_hours": 1}},
+                {"tool": "search_archive", "args": {"query": "family friends checked in neglected"}},
+                {"tool": "draft_message", "args": {
+                    "to": "Grace Chen",
+                    "subject": "Sunday — I'll be there",
+                    "body": "Grace, I know I've cancelled the last two dinners and I'm sorry. I'll be at Mom's birthday dinner on Sunday at 7 PM — no laptop. Can I bring dessert?",
+                }},
+                {"tool": "propose_calendar_change", "args": {
+                    "action": "decline",
+                    "event_title": "Evening launch status call",
+                    "reason": "The twin shows cutting 5h/week of meetings and sleeping +1h drops your daily stress risk from ~80% to ~6%. The evening status call is the biggest after-hours contributor and duplicates the morning war-room.",
+                }},
+                {"tool": "add_todo", "args": {"text": "Confirm Mom's birthday dinner — Sunday 7 PM (promised Grace)"}},
+                {"tool": "send_telegram", "args": {"text": "Weekly check: your stress risk is HIGH (~80%/day) after the launch crunch — sleep 6.6h, HRV down. I drafted a reply to Grace about Sunday's dinner, proposed declining the evening status call (−5h meetings + 1h sleep → risk drops to ~6%), and added a todo so you don't miss Sunday. Drafts and proposals are on your Agent page for approval."}},
+                {"tool": "finish", "args": {"summary": "Stress risk is high (~80%/day) driven by the June launch crunch: elevated trailing meeting load, 6.6h sleep, suppressed HRV. Simulation shows −5h meetings + 1h sleep brings risk to ~6%. Actions: drafted a reply to Grace Chen about Sunday's family dinner, proposed declining the redundant evening launch status call, added a reminder todo, and sent the wrap-up to Telegram. Drafts and calendar changes await user approval."}},
+            ]
+            return json.dumps(script[min(step, len(script) - 1)])
+
+        # 8. RAG / Archive Search fallback
         else:
             q = user_msg.lower()
             if "blocking" in q or "block" in q or "v1" in q:

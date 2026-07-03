@@ -9,6 +9,8 @@ const LINKS = [
   { href: "/archive", label: "Archive" },
   { href: "/ego", label: "Ego" },
   { href: "/drift", label: "Drift" },
+  { href: "/twin", label: "Twin" },
+  { href: "/agent", label: "Agent" },
   { href: "/graph", label: "Graph" },
   { href: "/relationships", label: "People" },
   { href: "/timeline", label: "Timeline" },
