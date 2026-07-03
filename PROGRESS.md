@@ -73,7 +73,7 @@
 |---|---|---|---|---|
 | Malayalam/Manglish sentiment | ✅ Done | Am4l-babu | feature/malayalam-sentiment | Code-mixed lexicon engine + optional Indic transformer (PR #26) |
 | Digital Twin — simulation engine | ✅ Done | Am4l-babu | feature/twin-simulation | simulate_workload(): stress probability from calendar + health, what-if sliders + risk curves on /twin (PR #30 merged) |
-| Autonomous agent loop | 🔄 Ongoing | Am4l-babu | feature/agent-loop | LLM tool-use loop over twin/calendar/archive: draft follow-ups, calendar optimization, Telegram delivery |
+| Autonomous agent loop | 👀 In Review | Am4l-babu | feature/agent-loop | Tool-use loop: investigates twin/calendar/health/archive → drafts, calendar proposals, todos, Telegram wrap-up; /agent UI (PR #32) |
 | SNN tripwire | 📋 Todo | — | — | LIF/Norse spiking net over temporal metadata; wakes LLM on anomaly |
 | Edge deployment (Pi Zero 2 W) | 📋 Todo | — | — | FastAPI + ChromaDB on Pi, low-RAM tuning |
 | ESP32 environment nodes | 📋 Todo | — | — | BME680 + mic dB via MQTT → productivity correlation |
@@ -144,4 +144,5 @@
 | 2026-07-03 | Am4l-babu | Opened PR #30 (twin simulation engine + /twin what-if UI) → development |
 | 2026-07-03 | Am4l-babu | PRs #29, #30 merged — todos system + twin simulation done; PR #31 cut development → main |
 | 2026-07-03 | Am4l-babu | Started autonomous agent loop (feature/agent-loop) |
+| 2026-07-03 | Am4l-babu | Opened PR #32 (autonomous agent loop + /agent UI) → development |
 
