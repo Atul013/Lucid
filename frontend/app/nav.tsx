@@ -5,12 +5,14 @@ import { usePathname } from "next/navigation";
 
 const LINKS = [
   { href: "/today", label: "Today" },
+  { href: "/todos", label: "Todos" },
   { href: "/archive", label: "Archive" },
   { href: "/ego", label: "Ego" },
   { href: "/drift", label: "Drift" },
   { href: "/graph", label: "Graph" },
   { href: "/relationships", label: "People" },
   { href: "/timeline", label: "Timeline" },
+  { href: "/connectors", label: "Sources" },
 ];
 
 export default function Nav() {

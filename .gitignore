@@ -6,6 +6,12 @@ node_modules/
 .next/
 chroma_data/
 chroma_mock_db.json
+calendar_mock_db.json
+health_mock_db.json
+finance_mock_db.json
+messages_mock_db.json
+telegram_config.json
+todos.json
 tokens.json
 ego_insights.json
 goals.json
@@ -13,3 +19,10 @@ graph.json
 relationships.json
 timeline.json
 briefing.json
+
+# WhatsApp bridge — session auth (Chromium profile) and local deps
+backend/whatsapp_service/.wwebjs_auth/
+backend/whatsapp_service/node_modules/
+
+# Local session notes (gitignored context file)
+SESSION_NOTES.md
