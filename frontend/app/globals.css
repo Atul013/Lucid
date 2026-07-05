@@ -47,7 +47,7 @@ body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   position: relative;
   min-height: 100dvh;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 /* Ambient light — two soft amber glows + a cool depth pool, fixed behind all
@@ -89,6 +89,19 @@ body::before {
   100% {
     transform: translate3d(-2%, 2.5%, 0) scale(1.04);
   }
+}
+
+/* Grid cell ripple — cells near click point pulse amber and fade. */
+@keyframes cell-ripple {
+  0%   { background-color: transparent; }
+  35%  { background-color: rgba(255, 125, 60, 0.05); }
+  100% { background-color: transparent; }
+}
+
+/* Checkmark icon pops in when a todo is marked done. */
+@keyframes checkmark-pop {
+  from { opacity: 0; transform: scale(0.3); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 /* Fine film grain — kills banding on the gradients, adds analog texture. */
@@ -339,6 +352,27 @@ body::after {
 }
 .bob {
   animation: bob 1.8s ease-in-out infinite;
+}
+
+/* Comet streak — diagonal float across card */
+@keyframes comet {
+  0% {
+    transform: rotate(35deg) translateX(-120px) translateY(-40px);
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: rotate(35deg) translateX(600px) translateY(200px);
+    opacity: 0;
+  }
+}
+.animate-comet {
+  animation: comet linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
