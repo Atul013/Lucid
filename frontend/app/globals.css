@@ -39,6 +39,7 @@
 html {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+  overflow-x: clip;
 }
 
 body {
@@ -47,7 +48,6 @@ body {
   font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
   position: relative;
   min-height: 100dvh;
-  overflow-x: clip;
 }
 
 /* Ambient light — two soft amber glows + a cool depth pool, fixed behind all
@@ -355,7 +355,7 @@ body::after {
 }
 
 /* Comet streak — diagonal float across card */
-@keyframes comet {
+@keyframes lucid-comet {
   0% {
     transform: rotate(35deg) translateX(-120px) translateY(-40px);
     opacity: 0;
@@ -371,8 +371,10 @@ body::after {
     opacity: 0;
   }
 }
-.animate-comet {
-  animation: comet linear infinite;
+.comet-streak {
+  animation-name: lucid-comet;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

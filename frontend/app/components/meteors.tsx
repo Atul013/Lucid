@@ -32,7 +32,7 @@ export function Meteors({ number = 12 }: { number?: number }) {
       {meteors.map((m) => (
         <span
           key={m.id}
-          className="pointer-events-none absolute animate-comet"
+          className="pointer-events-none absolute comet-streak"
           style={{
             top: m.top,
             left: m.left,
