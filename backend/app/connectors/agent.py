@@ -24,8 +24,8 @@ from app.connectors import telegram as telegram_connector
 from app.connectors import todos
 
 REPORT_FILE = Path("agent_report.json")
-MAX_STEPS = 12
-RUN_BUDGET_SECONDS = 420  # live reasoning models can take minutes per step
+MAX_STEPS = 14
+RUN_BUDGET_SECONDS = 720  # live reasoning models can take minutes per step
 _lock = threading.Lock()
 
 DEFAULT_GOAL = (
@@ -237,7 +237,8 @@ def run(goal: str | None = None) -> dict:
             REPORT_FILE.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
         _flush()
-        for _ in range(MAX_STEPS):
+        warned_wrap_up = False
+        for step_idx in range(MAX_STEPS):
             if time.monotonic() - started > RUN_BUDGET_SECONDS:
                 summary = (
                     f"Stopped at the {RUN_BUDGET_SECONDS // 60}-minute time budget after "
@@ -245,16 +246,38 @@ def run(goal: str | None = None) -> dict:
                     "Partial findings are in the step trace."
                 )
                 break
-            # A reasoning model can blow past the HTTP read timeout; retry
-            # once, and if the LLM stays unreachable end the run with a
-            # report instead of dying silently in the worker thread.
+            # Live models tend to keep taking small actions (another todo,
+            # another draft) instead of wrapping up. With few steps left,
+            # force the issue once so a run ends with a summary/wrap-up
+            # rather than just running out of steps mid-action.
+            remaining = MAX_STEPS - step_idx
+            if remaining <= 3 and not warned_wrap_up:
+                warned_wrap_up = True
+                messages.append({
+                    "role": "user",
+                    "content": (
+                        f"Only {remaining} steps remain before this run auto-stops. "
+                        "Stop investigating or adding more actions. If you haven't "
+                        "sent the Telegram wrap-up yet, call send_telegram now with "
+                        "a summary of findings and actions taken, then call "
+                        "finish(summary) as your very next tool call."
+                    ),
+                })
+            # A reasoning model can blow past the HTTP read timeout, and the
+            # free-tier NIM endpoint 429s under load; retry with a backoff
+            # (longer for 429, since retrying instantly just re-hits the
+            # same rate window), and if the LLM stays unreachable end the
+            # run with a report instead of dying silently in the worker
+            # thread.
             reply, llm_error = None, None
-            for _attempt in range(2):
+            for attempt in range(3):
                 try:
                     reply = llm.chat(messages, max_tokens=700, temperature=0.2)
                     break
                 except Exception as e:
                     llm_error = e
+                    if attempt < 2:
+                        time.sleep(30 if "429" in str(e) else 3)
             if reply is None:
                 summary = (
                     f"Run stopped early — the LLM did not respond ({llm_error}). "
