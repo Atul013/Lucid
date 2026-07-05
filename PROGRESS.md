@@ -36,7 +36,7 @@
 |---|---|---|---|---|
 | WhatsApp (`whatsapp-web.js`) | 🔄 Ongoing | Atul013 | feature/whatsapp-connector | Node.js microservice bridge; spare SIM Business account set up |
 | Gmail | ✅ Done | Atul013 | feature/gmail-connector | Gmail API + Google OAuth + sync |
-| Telegram | ✅ Done | Am4l-babu | feature/telegram-connector | Bot API connector + live bot (todo commands, reminders) + web todos page (PR #28 merged) |
+| Telegram | 👀 In Review | Am4l-babu | feature/telegram-command-menu | Bot API connector + live bot (todo commands, reminders) + web todos page (PR #28 merged); tappable command menu via setMyCommands (PR #35) |
 | Connectors UI — easy connect + guides | ✅ Done | Am4l-babu | feature/telegram-connector | Live credential forms on /connectors (Telegram token, Calendar sync, Finance/Health upload) + docs/connect guides (PR #28 merged) |
 | Financial data (mock CSV) | ✅ Done | Am4l-babu | feature/financial-ingestion | Bank-statement CSV parser → categorize spending → ChromaDB (PR #23) |
 | Health data (mock smartwatch JSON) | ✅ Done | Am4l-babu | feature/health-ingestion | Sleep, HRV, steps → ChromaDB + sentiment correlation (PR #25) |
@@ -73,7 +73,7 @@
 |---|---|---|---|---|
 | Malayalam/Manglish sentiment | ✅ Done | Am4l-babu | feature/malayalam-sentiment | Code-mixed lexicon engine + optional Indic transformer (PR #26) |
 | Digital Twin — simulation engine | ✅ Done | Am4l-babu | feature/twin-simulation | simulate_workload(): stress probability from calendar + health, what-if sliders + risk curves on /twin (PR #30 merged) |
-| Autonomous agent loop | 👀 In Review | Am4l-babu | feature/agent-loop | Tool-use loop: investigates twin/calendar/health/archive → drafts, calendar proposals, todos, Telegram wrap-up; /agent UI (PR #32) |
+| Autonomous agent loop | ✅ Done | Am4l-babu | feature/agent-loop | Tool-use loop: investigates twin/calendar/health/archive → drafts, calendar proposals, todos, Telegram wrap-up; /agent UI (PR #32 merged); reliability fix in PR #34 |
 | SNN tripwire | 📋 Todo | — | — | LIF/Norse spiking net over temporal metadata; wakes LLM on anomaly |
 | Edge deployment (Pi Zero 2 W) | 📋 Todo | — | — | FastAPI + ChromaDB on Pi, low-RAM tuning |
 | ESP32 environment nodes | 📋 Todo | — | — | BME680 + mic dB via MQTT → productivity correlation |
@@ -145,4 +145,7 @@
 | 2026-07-03 | Am4l-babu | PRs #29, #30 merged — todos system + twin simulation done; PR #31 cut development → main |
 | 2026-07-03 | Am4l-babu | Started autonomous agent loop (feature/agent-loop) |
 | 2026-07-03 | Am4l-babu | Opened PR #32 (autonomous agent loop + /agent UI) → development |
+| 2026-07-05 | Am4l-babu | PR #32 merged; live-tested agent runs against NVIDIA NIM surfaced 429s and step-budget exhaustion |
+| 2026-07-05 | Am4l-babu | Opened PR #34 (agent reliability fix — 429 backoff, longer budget, wrap-up nudge — commit that missed the PR #32 merge) → development |
+| 2026-07-05 | Am4l-babu | Added Telegram tappable command menu (setMyCommands); opened PR #35 → development |
 
