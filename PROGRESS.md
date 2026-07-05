@@ -85,7 +85,7 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| UI Redesign — dark console theme | 🔄 Ongoing | ZayedBH | feature/ui-dark-console | Full dark redesign: WebGL shader hero, GSAP animations, Lenis scroll, 8-route landing |
+| UI Redesign — dark console theme | 👀 In Review | ZayedBH | feature/ui-dark-console | PR #36: todos ripple grid, lamp hero, landing scroll fix, CORS patch |
 | Dashboard layout | 🔄 Ongoing | Atul013 | feature/dashboard-layout | Shared nav across Archive · Ego · Drift |
 | Connectors page | 👀 In Review | Atul013 | feature/connectors-onboarding | Connect Gmail + sync flow (first-run onboarding) |
 | Archive chat page | ✅ Done | Atul013 | feature/archive-search-ui | Editorial minimalist search UI over /gmail/search |
@@ -148,4 +148,5 @@
 | 2026-07-05 | Am4l-babu | PR #32 merged; live-tested agent runs against NVIDIA NIM surfaced 429s and step-budget exhaustion |
 | 2026-07-05 | Am4l-babu | Opened PR #34 (agent reliability fix — 429 backoff, longer budget, wrap-up nudge — commit that missed the PR #32 merge) → development |
 | 2026-07-05 | Am4l-babu | Added Telegram tappable command menu (setMyCommands); opened PR #35 → development |
+| 2026-07-06 | ZayedBH | Todos ripple grid, lamp hero, landing scroll fix, CORS patch; opened PR #36 → development |
 
