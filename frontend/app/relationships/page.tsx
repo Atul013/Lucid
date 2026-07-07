@@ -11,8 +11,8 @@ import {
   Reveal,
   CountUp,
 } from "../ui";
+import { API } from "../api";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type Rel = { name: string; kind: string; note: string; count: number };
 

@@ -6,8 +6,8 @@ import { Shell, PageHeader, Reveal } from "../ui";
 import { PlaceholdersVanishInput } from "../components/placeholders-vanish-input";
 import { MovingBorder } from "../components/moving-border";
 import { RippleBackground } from "../components/ripple-background";
+import { API } from "../api";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type Todo = {
   id: number;
