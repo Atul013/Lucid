@@ -27,3 +27,4 @@ backend/whatsapp_service/node_modules/
 # Local session notes (gitignored context file)
 SESSION_NOTES.md
 agent_report.json
+snn_report.json
