@@ -77,6 +77,9 @@ if MOCK_MODE:
     def sample(limit: int = 60) -> list[dict]:
         return _read_db()[:limit]
 
+    def all_emails() -> list[dict]:
+        return _read_db()
+
     FINANCE_MOCK_FILE = Path("finance_mock_db.json")
 
     def _read_finance_db() -> list[dict]:
@@ -257,6 +260,14 @@ else:
     def sample(limit: int = 60) -> list[dict]:
         """A slice of the whole archive, for analysis jobs (not a query)."""
         data = _collection().get(limit=limit, include=["documents", "metadatas"])
+        return [
+            {"text": d, **m}
+            for d, m in zip(data["documents"], data["metadatas"])
+        ]
+
+    def all_emails() -> list[dict]:
+        """Every email, for temporal-analysis jobs (not a query)."""
+        data = _collection().get(include=["documents", "metadatas"])
         return [
             {"text": d, **m}
             for d, m in zip(data["documents"], data["metadatas"])
