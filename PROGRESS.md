@@ -36,7 +36,7 @@
 |---|---|---|---|---|
 | WhatsApp (`whatsapp-web.js`) | 🔄 Ongoing | Atul013 | feature/whatsapp-connector | Node.js microservice bridge; spare SIM Business account set up |
 | Gmail | ✅ Done | Atul013 | feature/gmail-connector | Gmail API + Google OAuth + sync |
-| Telegram | 👀 In Review | Am4l-babu | feature/telegram-command-menu | Bot API connector + live bot (todo commands, reminders) + web todos page (PR #28 merged); tappable command menu via setMyCommands (PR #35) |
+| Telegram | ✅ Done | Am4l-babu | feature/telegram-command-menu | Bot API connector + live bot (todo commands, reminders) + web todos page (PR #28); tappable command menu (PR #35 merged) |
 | Connectors UI — easy connect + guides | ✅ Done | Am4l-babu | feature/telegram-connector | Live credential forms on /connectors (Telegram token, Calendar sync, Finance/Health upload) + docs/connect guides (PR #28 merged) |
 | Financial data (mock CSV) | ✅ Done | Am4l-babu | feature/financial-ingestion | Bank-statement CSV parser → categorize spending → ChromaDB (PR #23) |
 | Health data (mock smartwatch JSON) | ✅ Done | Am4l-babu | feature/health-ingestion | Sleep, HRV, steps → ChromaDB + sentiment correlation (PR #25) |
@@ -149,4 +149,6 @@
 | 2026-07-05 | Am4l-babu | Opened PR #34 (agent reliability fix — 429 backoff, longer budget, wrap-up nudge — commit that missed the PR #32 merge) → development |
 | 2026-07-05 | Am4l-babu | Added Telegram tappable command menu (setMyCommands); opened PR #35 → development |
 | 2026-07-06 | ZayedBH | Todos ripple grid, lamp hero, landing scroll fix, CORS patch; opened PR #36 → development |
+| 2026-07-07 | Am4l-babu | PRs #34, #35, #36 merged; PR #37 cut development → main |
+| 2026-07-07 | Am4l-babu | Opened PR #38 (LAN auto-config — API base from browser hostname, wildcard dev origins, private-LAN CORS) → development |
 
