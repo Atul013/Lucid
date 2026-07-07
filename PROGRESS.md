@@ -74,7 +74,7 @@
 | Malayalam/Manglish sentiment | ✅ Done | Am4l-babu | feature/malayalam-sentiment | Code-mixed lexicon engine + optional Indic transformer (PR #26) |
 | Digital Twin — simulation engine | ✅ Done | Am4l-babu | feature/twin-simulation | simulate_workload(): stress probability from calendar + health, what-if sliders + risk curves on /twin (PR #30 merged) |
 | Autonomous agent loop | ✅ Done | Am4l-babu | feature/agent-loop | Tool-use loop: investigates twin/calendar/health/archive → drafts, calendar proposals, todos, Telegram wrap-up; /agent UI (PR #32 merged); reliability fix in PR #34 |
-| SNN tripwire | 🔄 Ongoing | Am4l-babu | feature/snn-tripwire | LIF spiking layer over temporal metadata (pure Python first); wakes LLM on anomaly |
+| SNN tripwire | 👀 In Review | Am4l-babu | feature/snn-tripwire | Pure-Python LIF layer over 6 life-rhythm streams; /tripwire UI; wake=true launches the agent on fresh trips (PR #39) |
 | Edge deployment (Pi Zero 2 W) | 📋 Todo | — | — | FastAPI + ChromaDB on Pi, low-RAM tuning |
 | ESP32 environment nodes | 📋 Todo | — | — | BME680 + mic dB via MQTT → productivity correlation |
 | FOV camera + assistive interaction | 📋 Todo | — | — | MediaPipe posture/presence; faster-whisper offline STT; sign language |
@@ -152,4 +152,5 @@
 | 2026-07-07 | Am4l-babu | PRs #34, #35, #36 merged; PR #37 cut development → main |
 | 2026-07-07 | Am4l-babu | Opened PR #38 (LAN auto-config — API base from browser hostname, wildcard dev origins, private-LAN CORS) → development |
 | 2026-07-07 | Am4l-babu | Started SNN tripwire (feature/snn-tripwire) |
+| 2026-07-07 | Am4l-babu | Opened PR #39 (SNN tripwire + /tripwire UI) → development; live wake test launched a real agent run |
 
