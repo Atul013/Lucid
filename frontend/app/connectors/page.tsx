@@ -2,8 +2,8 @@
 
 import { useRef, useState, useEffect } from "react";
 import { Shell, PageHeader, Reveal, GhostButton } from "../ui";
+import { API } from "../api";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 const DOCS = "https://github.com/Atul013/Lucid/blob/development/docs/connect";
 const LUCID_WA = "919995265115";
 

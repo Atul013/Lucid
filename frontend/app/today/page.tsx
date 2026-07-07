@@ -4,8 +4,8 @@ import { useState, useEffect } from "react";
 import { Shell, Kicker, AccentButton, Thinking, StateNote, Arrow } from "../ui";
 import { CardContainer, CardBody, CardItem } from "../components/card-3d";
 import { EncryptedText } from "../components/encrypted-text";
+import { API } from "../api";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type Briefing = { generated?: boolean; date?: string; briefing?: string };
 

@@ -9,8 +9,8 @@ import {
   StateNote,
   Reveal,
 } from "../ui";
+import { API } from "../api";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type Step = { tool: string; args: Record<string, unknown>; observation: string };
 type Action = {
