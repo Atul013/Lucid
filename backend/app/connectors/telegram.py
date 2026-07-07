@@ -78,6 +78,10 @@ def connect(bot_token: str, chat_id: str | None = None) -> dict:
     if chat_id:
         cfg["chat_id"] = str(chat_id).strip()
     _write_config(cfg)
+    try:
+        _call("setMyCommands", bot_token, commands=BOT_COMMANDS)
+    except ValueError:
+        pass  # command-menu registration is a nicety, not load-bearing
     return {"bot_username": me.get("username"), "bot_name": me.get("first_name")}
 
 
@@ -190,8 +194,24 @@ HELP_TEXT = (
     "/edit 2 new text — rewrite it\n"
     "/del 2 — remove it\n"
     "/clear — drop all checked items\n\n"
-    "Anything else you send me is saved to your archive."
+    "Anything else you send me is saved to your archive.\n"
+    "Tap the ☰ menu button next to this chat's message box to pick a command "
+    "without typing it."
 )
+
+# Registered with Telegram via setMyCommands so clients show a tappable
+# command menu (the ☰ icon beside the message box) instead of the user
+# having to remember and type slash commands.
+BOT_COMMANDS = [
+    {"command": "todo", "description": "Show your todo list"},
+    {"command": "add", "description": "Add an item — /add buy milk"},
+    {"command": "done", "description": "Check off an item — /done 2"},
+    {"command": "undo", "description": "Uncheck an item — /undo 2"},
+    {"command": "edit", "description": "Rewrite an item — /edit 2 new text"},
+    {"command": "del", "description": "Remove an item — /del 2"},
+    {"command": "clear", "description": "Remove all checked items"},
+    {"command": "help", "description": "Show this help"},
+]
 
 _POLLER: threading.Thread | None = None
 _POLL_STOP = threading.Event()
@@ -287,6 +307,10 @@ def start_poller():
     global _POLLER
     if not is_connected() or (_POLLER and _POLLER.is_alive()):
         return
+    try:
+        _call("setMyCommands", _read_config()["bot_token"], commands=BOT_COMMANDS)
+    except ValueError:
+        pass  # bots connected before the command menu existed still work fine
     _POLL_STOP.clear()
     _POLLER = threading.Thread(target=_poll_loop, name="telegram-poller", daemon=True)
     _POLLER.start()
