@@ -54,7 +54,16 @@ _GREETING_WORDS = {"hi", "hey", "hello", "heyy", "hii", "sup", "yo", "howdy", "s
 
 
 def _looks_like_greeting(text: str) -> bool:
-    return text.strip().lower().rstrip("!. ") in _GREETING_WORDS
+    """True for a bare "hey" but also for the openers our own wa.me link
+    prefills ("Hey Lucid, connect me!"), which an exact match would miss.
+    Only the first word counts, so "hey, remind me to call mum" still archives."""
+    words = text.strip().lower().rstrip("!?. ").replace(",", " ").split()
+    if not words:
+        return False
+    if words[0] not in _GREETING_WORDS:
+        return False
+    # A greeting plus a real request is a request, not a hello.
+    return len(words) <= 5
 
 
 async def _nim_reply(sender: str) -> str:
