@@ -75,7 +75,7 @@
 | Malayalam/Manglish sentiment | ✅ Done | Am4l-babu | feature/malayalam-sentiment | Code-mixed lexicon engine + optional Indic transformer (PR #26) |
 | Digital Twin — simulation engine | ✅ Done | Am4l-babu | feature/twin-simulation | simulate_workload(): stress probability from calendar + health, what-if sliders + risk curves on /twin (PR #30 merged) |
 | Autonomous agent loop | ✅ Done | Am4l-babu | feature/agent-loop | Tool-use loop: investigates twin/calendar/health/archive → drafts, calendar proposals, todos, Telegram wrap-up; /agent UI (PR #32 merged); reliability fix in PR #34 |
-| SNN tripwire | 👀 In Review | Am4l-babu | feature/snn-tripwire | Pure-Python LIF layer over 6 life-rhythm streams; /tripwire UI; wake=true launches the agent on fresh trips (PR #39) |
+| SNN tripwire | ✅ Done | Am4l-babu | feature/snn-tripwire | Pure-Python LIF layer over 6 life-rhythm streams; /tripwire UI; wake=true launches the agent on fresh trips (PR #39 merged) |
 | Edge deployment (Pi Zero 2 W) | 📋 Todo | — | — | FastAPI + ChromaDB on Pi, low-RAM tuning |
 | ESP32 environment nodes | 📋 Todo | — | — | BME680 + mic dB via MQTT → productivity correlation |
 | FOV camera + assistive interaction | 📋 Todo | — | — | MediaPipe posture/presence; faster-whisper offline STT; sign language |
@@ -158,3 +158,4 @@
 | 2026-07-11 | Atul013 | Started Telegram chat-history import (Telethon) — pairs with the bot connector |
 | 2026-07-11 | Atul013 | Opened PR #42 (Telegram chat-history import via Telethon) → development |
 | 2026-07-11 | Atul013 | Opened PR #43 (WhatsApp — Node bridge + shared-archive ingest) → development |
+| 2026-07-11 | Am4l-babu | PRs #38, #39 merged — LAN auto-config + SNN tripwire done |
