@@ -12,10 +12,27 @@ const LUCID_NUMBER = process.env.LUCID_WA_NUMBER ?? "919995265115";
 // ── WhatsApp client ──────────────────────────────────────────────────────────
 
 const client = new Client({
-  authStrategy: new LocalAuth({ dataPath: "./.wwebjs_auth" }),
+  // dataPath must be a persistent volume in production — lose it and the
+  // account unlinks, forcing a QR re-scan on every restart.
+  authStrategy: new LocalAuth({
+    dataPath: process.env.WA_AUTH_PATH ?? "./.wwebjs_auth",
+  }),
   puppeteer: {
     headless: true,
-    args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    // On ARM (e.g. Oracle Ampere) Puppeteer's bundled Chromium is x86-only and
+    // won't start — point at the system browser instead:
+    //   sudo apt install -y chromium-browser
+    //   PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+    ...(process.env.PUPPETEER_EXECUTABLE_PATH && {
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+    }),
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      // Chromium's default /dev/shm is tiny on small VMs and crashes the tab.
+      "--disable-dev-shm-usage",
+      "--disable-gpu",
+    ],
   },
 });
 
@@ -131,6 +148,11 @@ app.post("/send", async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`[Lucid WA] Bridge listening on http://localhost:${PORT}`);
+// Bind to loopback by default: /send has no auth, so anything that can reach
+// this port can send WhatsApp messages as Lucid. Only the backend (same host)
+// should talk to it. Override with WA_SERVICE_HOST if you know what you're doing.
+const HOST = process.env.WA_SERVICE_HOST ?? "127.0.0.1";
+
+app.listen(PORT, HOST, () => {
+  console.log(`[Lucid WA] Bridge listening on http://${HOST}:${PORT}`);
 });
