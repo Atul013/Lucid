@@ -54,15 +54,18 @@ client.on("message", async (msg) => {
 
   const contact = await msg.getContact();
 
-  // WhatsApp now addresses chats by LID (`6837…@lid`), not `<number>@c.us`, so
-  // stripping "@c.us" off msg.from can hand back a LID instead of a phone
-  // number — which silently breaks the owner allowlist and the reply path.
-  // contact.number is the real phone number; fall back to stripping either suffix.
-  const number = contact.number || msg.from.replace(/@(c\.us|lid|s\.whatsapp\.net)$/, "");
+  // Identity is the chat id (`6837…@lid` or `9199…@c.us`), never a phone number.
+  // Since WhatsApp's LID migration, contact.number is often empty and msg.from
+  // is a LID — so any attempt to derive a phone number is unreliable. The chat
+  // id is stable per contact AND is exactly the address a reply must go to, so
+  // we key ownership off it and treat the number as display metadata only.
+  const chatId = msg.from;
+  const number = contact.number || null;
 
   const payload = {
-    from: contact.pushname || number,
+    from: contact.pushname || number || chatId,
     number,
+    chat_id: chatId,
     body: msg.body,
     timestamp: msg.timestamp,
     type: "whatsapp",
@@ -100,23 +103,28 @@ app.get("/qr", (_req, res) => {
 // Send a message to a recipient
 // POST /send  { to: "919876543210", message: "Good morning..." }
 app.post("/send", async (req, res) => {
-  const { to, message } = req.body;
-  if (!to || !message) {
-    return res.status(400).json({ error: "to and message are required" });
+  const { to, chatId, message } = req.body;
+  if (!message || (!to && !chatId)) {
+    return res.status(400).json({ error: "message and one of chatId/to are required" });
   }
   if (!client.info) {
     return res.status(503).json({ error: "WhatsApp not ready yet" });
   }
   try {
-    // Let WhatsApp resolve the chat id rather than assuming `<number>@c.us`.
-    // Newer WhatsApp Web addresses chats by LID, and hand-built c.us ids blow
-    // up inside the client ("Invariant Violation ... getChatRecordByAccountLid").
-    const numberId = await client.getNumberId(to);
-    if (!numberId) {
-      return res.status(404).json({ error: `${to} is not on WhatsApp` });
+    // Replying to the chat id we received the message on is the only reliable
+    // path: it needs no lookup and works for both LID and c.us chats. `to` (a
+    // raw phone number) is the fallback for outbound messages we initiate,
+    // where WhatsApp has to resolve the id for us.
+    let target = chatId;
+    if (!target) {
+      const numberId = await client.getNumberId(to);
+      if (!numberId) {
+        return res.status(404).json({ error: `${to} is not on WhatsApp` });
+      }
+      target = numberId._serialized;
     }
-    await client.sendMessage(numberId._serialized, message);
-    res.json({ ok: true, chatId: numberId._serialized });
+    await client.sendMessage(target, message);
+    res.json({ ok: true, chatId: target });
   } catch (err) {
     console.error("[Lucid WA] Send error:", err.message);
     res.status(500).json({ error: err.message });

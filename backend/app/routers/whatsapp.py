@@ -43,48 +43,37 @@ def _write_config(cfg: dict):
     CONFIG_FILE.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
 
 
-def _norm(number: str) -> str:
-    # Tolerate a LID/JID suffix leaking through ("6837…@lid") rather than
-    # binding it as if it were a phone number.
-    number = number.split("@", 1)[0]
-    return number.lstrip("+").replace(" ", "").replace("-", "")
+def _is_chat_id(value: str) -> bool:
+    """A WhatsApp chat id — "6837…@lid" or "9199…@c.us".
 
-
-def _is_phone_number(number: str) -> bool:
-    """A real MSISDN, not a WhatsApp LID or internal id.
-
-    Must be checked on the raw value: a LID is all digits too ("6837…@lid"),
-    so once the suffix is stripped it is indistinguishable from a phone number.
-    The "@" is the only tell.
+    Identity is keyed on the chat id, not a phone number. Since WhatsApp's LID
+    migration `contact.number` is frequently empty and `msg.from` is a LID, so
+    any phone number we derive is unreliable — and a bare LID is all-digits,
+    making it indistinguishable from an MSISDN. The chat id is unambiguous,
+    stable per contact, and is the address replies must be sent to anyway.
     """
-    if "@" in number:
-        return False
-    n = number.lstrip("+").replace(" ", "").replace("-", "")
-    return n.isdigit() and 8 <= len(n) <= 15
+    return "@" in value and value.split("@", 1)[0].isdigit()
 
 
 def _owner_numbers() -> set[str]:
-    """Numbers allowed to write to the archive and talk to the agent.
+    """Chat ids allowed to write to the archive and talk to the agent.
 
     Lucid's number is public — anyone can message it. Without this allowlist a
     stranger's message would be archived as if it were the owner's own life
     data, and would get an AI reply.
 
-    Owners come from the pairing flow (a number that proved possession by
-    messaging us a one-time code), plus any LUCID_OWNER_NUMBERS set in env as
-    an escape hatch for local dev.
+    Owners come from the pairing flow: a chat that proved possession by sending
+    us a one-time code.
     """
-    paired = {_norm(n) for n in _read_config().get("owners", [])}
-    env = {_norm(n) for n in os.getenv("LUCID_OWNER_NUMBERS", "").split(",") if n.strip()}
-    return paired | env
+    return set(_read_config().get("owners", []))
 
 
-def _is_owner(number: str) -> bool:
+def _is_owner(chat_id: str) -> bool:
     owners = _owner_numbers()
     if not owners:
         # Fail closed: an unconfigured allowlist must not mean "trust everyone".
         return False
-    return _norm(number) in owners
+    return chat_id in owners
 
 
 # ── pairing: prove you own the number by messaging us a one-time code ────────
@@ -106,11 +95,11 @@ def start_pairing() -> dict:
     return {"code": code, "expires_in": int(PAIR_TTL.total_seconds())}
 
 
-def _claim_if_pairing_code(number: str, text: str) -> bool:
-    """If `text` is the live pairing code, bind `number` as an owner.
+def _claim_if_pairing_code(chat_id: str, text: str) -> bool:
+    """If `text` is the live pairing code, bind `chat_id` as an owner.
 
     This is what makes ownership verifiable: only someone holding the phone can
-    send from that number, so a matching code proves possession. Beats typing a
+    send from that chat, so a matching code proves possession. Beats typing a
     number into a form (unverified) or trust-on-first-use (racy).
     """
     pending = _read_config().get("pairing")
@@ -120,20 +109,18 @@ def _claim_if_pairing_code(number: str, text: str) -> bool:
         return False
     if datetime.now(timezone.utc) > datetime.fromisoformat(pending["expires_at"]):
         return False
-    if not _is_phone_number(number):
-        # The bridge should always resolve a real phone number. If a LID reaches
-        # us, binding it would create an owner that never matches again.
-        log.warning("WA pairing refused — %r is not a phone number", number)
+    if not _is_chat_id(chat_id):
+        log.warning("WA pairing refused — %r is not a chat id", chat_id)
         return False
 
     cfg = _read_config()
     owners = set(cfg.get("owners", []))
-    owners.add(_norm(number))
+    owners.add(chat_id)
     cfg["owners"] = sorted(owners)
     cfg.pop("pairing", None)  # single-use
     cfg["paired_at"] = datetime.now(timezone.utc).isoformat()
     _write_config(cfg)
-    log.info("WA paired: %s is now an owner", number)
+    log.info("WA paired: %s is now an owner", chat_id)
     return True
 
 WELCOME_SYSTEM = (
@@ -187,18 +174,21 @@ async def _nim_reply(sender: str) -> str:
         return "Hey — you're connected to Lucid. Your messages will be archived and understood."
 
 
-async def _send_wa(to: str, message: str):
+async def _send_wa(target: str, message: str):
+    """`target` is a chat id ("…@lid"/"…@c.us") when replying, or a bare phone
+    number for messages Lucid initiates — the bridge handles both."""
+    key = "chatId" if "@" in target else "to"
     try:
-        async with httpx.AsyncClient(timeout=10) as client:
+        async with httpx.AsyncClient(timeout=15) as client:
             r = await client.post(
                 f"{WA_SERVICE}/send",
-                json={"to": to, "message": message},
+                json={key: target, "message": message},
             )
         if not r.is_success:
-            log.warning("WA reply to %s rejected by bridge: %s", to, r.text)
+            log.warning("WA reply to %s rejected by bridge: %s", target, r.text)
     except Exception as e:
         # A failed reply must not fail ingest — but it must not be silent either.
-        log.warning("WA reply to %s failed: %s", to, e)
+        log.warning("WA reply to %s failed: %s", target, e)
 
 
 def _answer_from_archive(question: str) -> str:
@@ -235,10 +225,13 @@ async def ingest_message(raw: dict):
     Records share the Telegram record shape, so every chat source lands in one
     `messages` collection that Archive/Ego/sentiment read uniformly.
     """
-    sender = raw.get("from") or raw.get("from_name") or raw.get("number", "unknown")
     body = raw.get("body", "")
     ts = raw.get("timestamp", int(datetime.now(timezone.utc).timestamp()))
-    number = raw.get("number", "")
+    number = raw.get("number") or ""
+    # Identity and the reply address are both the chat id. Older bridges only
+    # sent `number`, so fall back to it.
+    chat_id = raw.get("chat_id") or number
+    sender = raw.get("from") or raw.get("from_name") or number or chat_id
 
     if not body.strip():
         return {"ok": True, "skipped": True}
@@ -246,48 +239,47 @@ async def ingest_message(raw: dict):
     # Lucid's number is public. Only the owner may write to the archive or
     # reach the agent — strangers are dropped silently, with no reply, so the
     # bot can't be used as a free LLM or to poison the archive.
-    # Pairing is checked before the allowlist — it's how a number *becomes* an
-    # owner in the first place.
-    if _claim_if_pairing_code(number, body):
+    # Pairing is checked first — it's how a chat *becomes* an owner.
+    if _claim_if_pairing_code(chat_id, body):
         await _send_wa(
-            number,
+            chat_id,
             "Linked. 🌘 This number now owns your Lucid archive.\n\n"
             "Send me a thought and I'll file it, ask a question and I'll answer "
             "from your archive, or try /help for commands.",
         )
         return {"ok": True, "handled": "paired"}
 
-    if not _is_owner(number):
+    if not _is_owner(chat_id):
         log.warning(
             "WA message from %r ignored — not a paired owner %s",
-            number, sorted(_owner_numbers()) or "(none)",
+            chat_id, sorted(_owner_numbers()) or "(none)",
         )
         return {"ok": True, "ignored": "not_owner"}
 
-    log.info("WA message from owner %s: %r", number, body[:60])
+    log.info("WA message from owner %s: %r", chat_id, body[:60])
 
     text = body.strip()
 
     if text.startswith("/"):
         # Same todo commands as the Telegram bot — one shared list.
         from app.connectors.telegram import _handle_command
-        await _send_wa(number, _handle_command(text))
+        await _send_wa(chat_id, _handle_command(text))
         return {"ok": True, "handled": "command"}
 
     if _looks_like_greeting(text):
-        await _send_wa(number, await _nim_reply(sender))
+        await _send_wa(chat_id, await _nim_reply(sender))
         return {"ok": True, "handled": "greeting"}
 
     date = datetime.fromtimestamp(ts, tz=timezone.utc)
     # Stable id → replaying the same message upserts instead of duplicating.
-    uid = hashlib.md5(f"whatsapp|{number}|{ts}".encode()).hexdigest()
+    uid = hashlib.md5(f"whatsapp|{chat_id}|{ts}".encode()).hexdigest()
     ingested = chroma.ingest_messages([{
         "id": uid,
         "date": date.strftime("%Y-%m-%d"),
         "datetime": date.isoformat(),
         "from": sender,
         "chat": sender,
-        "chat_id": number,
+        "chat_id": chat_id,
         "source": "whatsapp",
         "outgoing": False,
         "text": text,
@@ -295,10 +287,10 @@ async def ingest_message(raw: dict):
 
     # A question is a request, not a diary entry — answer it from the archive.
     if text.endswith("?"):
-        await _send_wa(number, _answer_from_archive(text))
+        await _send_wa(chat_id, _answer_from_archive(text))
         return {"ok": True, "ingested": ingested, "handled": "question"}
 
-    await _send_wa(number, "Saved to your archive. 📥  (/help for commands)")
+    await _send_wa(chat_id, "Saved to your archive. 📥  (/help for commands)")
     return {"ok": True, "ingested": ingested, "handled": "archived"}
 
 
