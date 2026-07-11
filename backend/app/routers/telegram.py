@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from app.connectors import chroma
 from app.connectors import telegram as telegram_connector
+from app.connectors import telegram_history as history_connector
 
 router = APIRouter(prefix="/telegram")
 
@@ -19,6 +20,20 @@ class SendBody(BaseModel):
 
 class ChatIdBody(BaseModel):
     chat_id: str
+
+
+class ApiCredsBody(BaseModel):
+    api_id: str
+    api_hash: str
+
+
+class PhoneBody(BaseModel):
+    phone: str
+
+
+class CodeBody(BaseModel):
+    code: str
+    password: str | None = None
 
 
 @router.post("/connect")
@@ -81,3 +96,59 @@ def disconnect():
 @router.get("/search")
 def search(q: str, n: int = 10):
     return {"results": chroma.search_messages(q, n)}
+
+
+# ── chat history (user account, Telethon) ────────────────────────────────────
+# The bot above only sees messages sent to it. These routes log in as *you* and
+# import existing conversations. Same archive, same ids — see telegram_history.
+
+@router.get("/history/status")
+def history_status():
+    return history_connector.status()
+
+
+@router.post("/history/credentials")
+def history_credentials(body: ApiCredsBody):
+    """Save api_id/api_hash from my.telegram.org → API development tools."""
+    try:
+        history_connector.save_api_credentials(body.api_id, body.api_hash)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return history_connector.status()
+
+
+@router.post("/history/auth/start")
+def history_auth_start(body: PhoneBody):
+    """Send a login code to your Telegram app."""
+    try:
+        return history_connector.start_login(body.phone)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/history/auth/verify")
+def history_auth_verify(body: CodeBody):
+    """Confirm the login code; pass `password` too if the account has 2FA."""
+    try:
+        return history_connector.verify_code(body.code, body.password)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+@router.post("/history/sync")
+def history_sync(chat_limit: int = 20, per_chat: int = 100):
+    """Import past conversations into the archive."""
+    if not history_connector.is_connected():
+        raise HTTPException(status_code=400, detail="Telegram account not connected.")
+    try:
+        messages = history_connector.fetch_history(chat_limit, per_chat)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    ingested = chroma.ingest_messages(messages)
+    return {"fetched": len(messages), "ingested": ingested}
+
+
+@router.delete("/history/logout")
+def history_logout():
+    history_connector.logout()
+    return {"connected": False}
