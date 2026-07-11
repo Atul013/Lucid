@@ -34,7 +34,7 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| WhatsApp (`whatsapp-web.js`) | 🔄 Ongoing | Atul013 | feature/whatsapp-connector | Node.js microservice bridge; spare SIM Business account set up |
+| WhatsApp (`whatsapp-web.js`) | 👀 In Review | Atul013 | feature/whatsapp-ingestion | Node bridge + ingest into the shared `messages` archive (PR #43). Rebuilt off development: the old feature/whatsapp-connector branch called a dead chroma API and carried an obsolete landing-page diff |
 | Gmail | ✅ Done | Atul013 | feature/gmail-connector | Gmail API + Google OAuth + sync |
 | Telegram | ✅ Done | Am4l-babu | feature/telegram-command-menu | Bot API connector + live bot (todo commands, reminders) + web todos page (PR #28); tappable command menu (PR #35 merged) |
 | Telegram — chat history import | 👀 In Review | Atul013 | feature/telegram-history | Telethon user-account session reads existing chats → same `messages` archive as the bot (dedup by message id). Complements PR #28: bot = live commands + delivery, history = past conversations |
@@ -157,3 +157,4 @@
 | 2026-07-11 | Atul013 | Cut PR #41 (LAN auto-config) development → main |
 | 2026-07-11 | Atul013 | Started Telegram chat-history import (Telethon) — pairs with the bot connector |
 | 2026-07-11 | Atul013 | Opened PR #42 (Telegram chat-history import via Telethon) → development |
+| 2026-07-11 | Atul013 | Opened PR #43 (WhatsApp — Node bridge + shared-archive ingest) → development |
