@@ -101,9 +101,15 @@ app.post("/send", async (req, res) => {
     return res.status(503).json({ error: "WhatsApp not ready yet" });
   }
   try {
-    const chatId = `${to}@c.us`;
-    await client.sendMessage(chatId, message);
-    res.json({ ok: true });
+    // Let WhatsApp resolve the chat id rather than assuming `<number>@c.us`.
+    // Newer WhatsApp Web addresses chats by LID, and hand-built c.us ids blow
+    // up inside the client ("Invariant Violation ... getChatRecordByAccountLid").
+    const numberId = await client.getNumberId(to);
+    if (!numberId) {
+      return res.status(404).json({ error: `${to} is not on WhatsApp` });
+    }
+    await client.sendMessage(numberId._serialized, message);
+    res.json({ ok: true, chatId: numberId._serialized });
   } catch (err) {
     console.error("[Lucid WA] Send error:", err.message);
     res.status(500).json({ error: err.message });
