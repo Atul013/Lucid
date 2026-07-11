@@ -10,8 +10,8 @@ import {
   StateNote,
   Arrow,
 } from "../ui";
+import { API } from "../api";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type Day = { date: string; score: number; mood: string; count: number };
 

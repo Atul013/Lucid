@@ -10,8 +10,8 @@ import {
   StateNote,
   Reveal,
 } from "../ui";
+import { API } from "../api";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 type Status = {
   health_days: number;
