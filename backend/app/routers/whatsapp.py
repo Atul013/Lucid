@@ -4,13 +4,41 @@ import httpx
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
-from app.connectors import chroma
+from app.connectors import chroma, llm
 
 router = APIRouter()
 
 WA_SERVICE = os.getenv("WA_SERVICE_URL", "http://localhost:3001")
 NIM_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 NIM_MODEL = "minimaxai/minimax-m3"
+
+ASK_SYSTEM = (
+    "You are Lucid, a personal archive assistant answering over WhatsApp. "
+    "Answer using ONLY the excerpts provided. Be concise — this is a chat "
+    "message, so keep it to a few sentences. If the excerpts don't contain "
+    "the answer, say so plainly; do not invent details. Plain text only: no "
+    "markdown, asterisks, headers, or bullet symbols."
+)
+
+
+def _owner_numbers() -> set[str]:
+    """Numbers allowed to write to the archive and talk to the agent.
+
+    Lucid's business number is public — anyone can message it. Without this
+    allowlist a stranger's message would be archived as if it were the owner's
+    own life data, and would get an AI reply. Configure LUCID_OWNER_NUMBERS
+    (comma-separated, country code, no +) to your own number(s).
+    """
+    raw = os.getenv("LUCID_OWNER_NUMBERS", "")
+    return {n.strip().lstrip("+").replace(" ", "") for n in raw.split(",") if n.strip()}
+
+
+def _is_owner(number: str) -> bool:
+    owners = _owner_numbers()
+    if not owners:
+        # Fail closed: an unconfigured allowlist must not mean "trust everyone".
+        return False
+    return number.lstrip("+").replace(" ", "") in owners
 
 WELCOME_SYSTEM = (
     "You are Lucid — a personal AI that lives in someone's archive. "
@@ -65,6 +93,26 @@ async def _send_wa(to: str, message: str):
         pass  # don't fail ingest if reply fails
 
 
+def _answer_from_archive(question: str) -> str:
+    """Answer a question over the chat archive + email, like /archive/ask does
+    but across messages too — WhatsApp questions are usually about conversations."""
+    hits = chroma.search_messages(question, n_results=5) + chroma.search_emails(question, n_results=3)
+    if not hits:
+        return "Your archive is empty — connect a source and sync first."
+
+    context = "\n\n---\n\n".join(
+        f"From: {h.get('from', '?')}\nDate: {h.get('date', '?')}\n{h.get('text', '')}"
+        for h in hits
+    )
+    return llm.chat(
+        [
+            {"role": "system", "content": ASK_SYSTEM},
+            {"role": "user", "content": f"Excerpts:\n\n{context}\n\nQuestion: {question}"},
+        ],
+        max_tokens=300,
+    )
+
+
 class OutboundMessage(BaseModel):
     to: str
     message: str
@@ -72,10 +120,12 @@ class OutboundMessage(BaseModel):
 
 @router.post("/whatsapp/ingest")
 async def ingest_message(raw: dict):
-    """Receive an incoming WhatsApp message from the Node bridge and archive it.
+    """Handle an incoming WhatsApp message from the Node bridge.
 
-    Records use the same shape as the Telegram connector so every chat source
-    lands in one `messages` collection that Archive/Ego/sentiment read uniformly.
+    Mirrors the Telegram bot: slash commands run against the todo list,
+    questions are answered from the archive, everything else is saved.
+    Records share the Telegram record shape, so every chat source lands in one
+    `messages` collection that Archive/Ego/sentiment read uniformly.
     """
     sender = raw.get("from") or raw.get("from_name") or raw.get("number", "unknown")
     body = raw.get("body", "")
@@ -85,10 +135,27 @@ async def ingest_message(raw: dict):
     if not body.strip():
         return {"ok": True, "skipped": True}
 
+    # Lucid's number is public. Only the owner may write to the archive or
+    # reach the agent — strangers are dropped silently, with no reply, so the
+    # bot can't be used as a free LLM or to poison the archive.
+    if not _is_owner(number):
+        return {"ok": True, "ignored": "not_owner"}
+
+    text = body.strip()
+
+    if text.startswith("/"):
+        # Same todo commands as the Telegram bot — one shared list.
+        from app.connectors.telegram import _handle_command
+        await _send_wa(number, _handle_command(text))
+        return {"ok": True, "handled": "command"}
+
+    if _looks_like_greeting(text):
+        await _send_wa(number, await _nim_reply(sender))
+        return {"ok": True, "handled": "greeting"}
+
     date = datetime.fromtimestamp(ts, tz=timezone.utc)
     # Stable id → replaying the same message upserts instead of duplicating.
     uid = hashlib.md5(f"whatsapp|{number}|{ts}".encode()).hexdigest()
-
     ingested = chroma.ingest_messages([{
         "id": uid,
         "date": date.strftime("%Y-%m-%d"),
@@ -98,15 +165,16 @@ async def ingest_message(raw: dict):
         "chat_id": number,
         "source": "whatsapp",
         "outgoing": False,
-        "text": body,
+        "text": text,
     }])
 
-    # Auto-reply with an AI welcome when someone says hello.
-    if _looks_like_greeting(body):
-        reply = await _nim_reply(sender)
-        await _send_wa(number, reply)
+    # A question is a request, not a diary entry — answer it from the archive.
+    if text.endswith("?"):
+        await _send_wa(number, _answer_from_archive(text))
+        return {"ok": True, "ingested": ingested, "handled": "question"}
 
-    return {"ok": True, "ingested": ingested}
+    await _send_wa(number, "Saved to your archive. 📥  (/help for commands)")
+    return {"ok": True, "ingested": ingested, "handled": "archived"}
 
 
 @router.post("/whatsapp/send")
@@ -130,10 +198,26 @@ async def send_message(msg: OutboundMessage):
 
 @router.get("/whatsapp/status")
 async def wa_status():
-    """Check if the Node bridge is up and WhatsApp is connected."""
+    """Check if the Node bridge is up and WhatsApp is linked."""
+    owners_configured = bool(_owner_numbers())
     try:
         async with httpx.AsyncClient(timeout=5) as client:
             r = await client.get(f"{WA_SERVICE}/health")
+        return {**r.json(), "owners_configured": owners_configured}
+    except httpx.ConnectError:
+        return {"status": "offline", "ready": False, "owners_configured": owners_configured}
+
+
+@router.get("/whatsapp/qr")
+async def wa_qr():
+    """The live pairing QR, as a data-URL, so /connectors can show it in the
+    browser. Null once the account is linked. WhatsApp rotates it every ~20s."""
+    try:
+        async with httpx.AsyncClient(timeout=5) as client:
+            r = await client.get(f"{WA_SERVICE}/qr")
         return r.json()
     except httpx.ConnectError:
-        return {"status": "offline", "ready": False}
+        raise HTTPException(
+            status_code=503,
+            detail="WhatsApp bridge not running — start backend/whatsapp_service (npm start).",
+        )

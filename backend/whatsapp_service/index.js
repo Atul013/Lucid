@@ -1,6 +1,7 @@
 require("dotenv").config({ path: require("path").resolve(__dirname, "../../.env") });
 const { Client, LocalAuth } = require("whatsapp-web.js");
 const qrcode = require("qrcode-terminal");
+const QRCode = require("qrcode");
 const express = require("express");
 
 const FASTAPI_URL = process.env.FASTAPI_URL ?? "http://localhost:8000";
@@ -18,9 +19,19 @@ const client = new Client({
   },
 });
 
+// The most recent QR, held as a data-URL so /connectors can render it in the
+// browser instead of making you read it off a terminal. WhatsApp rotates the
+// code every ~20s, so this is always overwritten with the live one.
+let currentQR = null;
+
 client.on("qr", (qr) => {
   console.log("\n[Lucid WA] Scan this QR with WhatsApp Business:\n");
   qrcode.generate(qr, { small: true });
+  QRCode.toDataURL(qr, { margin: 1, width: 320 })
+    .then((dataUrl) => {
+      currentQR = dataUrl;
+    })
+    .catch((err) => console.error("[Lucid WA] QR render failed:", err.message));
 });
 
 client.on("authenticated", () => {
@@ -28,6 +39,7 @@ client.on("authenticated", () => {
 });
 
 client.on("ready", () => {
+  currentQR = null; // linked — nothing left to scan
   console.log("[Lucid WA] Client ready — connected as", LUCID_NUMBER);
 });
 
@@ -71,6 +83,11 @@ app.use(express.json());
 // Health check
 app.get("/health", (_req, res) => {
   res.json({ status: "ok", ready: client.info != null });
+});
+
+// Live QR for the browser connect flow. Null once the account is linked.
+app.get("/qr", (_req, res) => {
+  res.json({ ready: client.info != null, qr: currentQR });
 });
 
 // Send a message to a recipient

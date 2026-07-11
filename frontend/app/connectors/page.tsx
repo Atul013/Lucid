@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { Shell, PageHeader, Reveal, GhostButton } from "../ui";
 import { API } from "../api";
 
@@ -64,15 +64,72 @@ function useGmail() {
 
 function useWhatsApp() {
   const [status, setStatus] = useState<Status>("checking");
+  const [ownersConfigured, setOwnersConfigured] = useState(true);
+  const [qr, setQr] = useState<string | null>(null);
+  const [pairing, setPairing] = useState(false);
+  const [qrError, setQrError] = useState<string | null>(null);
+
+  const check = useCallback(
+    () =>
+      statusFetch("/whatsapp/status")
+        .then((r) => r.json())
+        .then((d) => {
+          setStatus(d.ready ? "connected" : "disconnected");
+          setOwnersConfigured(d.owners_configured !== false);
+          return d.ready as boolean;
+        })
+        .catch(() => {
+          setStatus("disconnected");
+          return false;
+        }),
+    [],
+  );
 
   useEffect(() => {
-    statusFetch("/whatsapp/status")
-      .then((r) => r.json())
-      .then((d) => setStatus(d.ready ? "connected" : "disconnected"))
-      .catch(() => setStatus("disconnected"));
-  }, []);
+    check();
+  }, [check]);
 
-  return { status };
+  // While pairing, poll the bridge: WhatsApp rotates the QR every ~20s, and we
+  // need to notice the moment the phone links so the card can flip to connected.
+  useEffect(() => {
+    if (!pairing) return;
+    let cancelled = false;
+
+    const tick = async () => {
+      try {
+        const r = await statusFetch("/whatsapp/qr");
+        if (!r.ok) throw new Error("bridge offline");
+        const d = await r.json();
+        if (cancelled) return;
+        if (d.ready) {
+          setPairing(false);
+          setQr(null);
+          setStatus("connected");
+          return;
+        }
+        setQr(d.qr ?? null);
+      } catch {
+        if (cancelled) return;
+        setQrError("Bridge offline — run `npm start` in backend/whatsapp_service.");
+        setPairing(false);
+      }
+    };
+
+    tick();
+    const id = setInterval(tick, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [pairing]);
+
+  function startPairing() {
+    setQrError(null);
+    setQr(null);
+    setPairing(true);
+  }
+
+  return { status, ownersConfigured, qr, pairing, qrError, startPairing };
 }
 
 function useTelegram() {
@@ -491,21 +548,15 @@ export default function ConnectorsPage() {
         <ConnectorCard
           icon={<WhatsAppIcon />}
           name="WhatsApp"
-          description="Messages from Lucid's business number land in your archive and trigger AI-generated replies."
+          description="Link Lucid's business number, then message it. Your notes land in the archive; questions get answered from it."
           status={wa.status}
           guide="WHATSAPP_CONNECT.md"
           actions={
             wa.status === "connected" ? (
               <>
-                <GhostButton
-                  onClick={() =>
-                    fetch(`${API}/whatsapp/status`)
-                      .then((r) => r.json())
-                      .then((d) => alert(d.ready ? "WhatsApp bridge is live." : "Bridge offline."))
-                  }
-                >
-                  Test
-                </GhostButton>
+                <a href={waLink()} target="_blank" rel="noopener noreferrer">
+                  <GhostButton>Message Lucid →</GhostButton>
+                </a>
                 <span className="ml-auto font-mono text-[0.6rem] uppercase tracking-[0.18em] text-faint">
                   +91 99952 65115
                 </span>
@@ -515,19 +566,47 @@ export default function ConnectorsPage() {
                 Checking…
               </span>
             ) : (
-              <a
-                href={waLink()}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).href = waLink();
-                }}
-              >
-                <GhostButton>Message Lucid on WhatsApp →</GhostButton>
-              </a>
+              <GhostButton onClick={wa.startPairing} disabled={wa.pairing}>
+                {wa.pairing ? "Waiting for scan…" : "Connect — scan QR"}
+              </GhostButton>
             )
           }
-        />
+        >
+          {wa.pairing && (
+            <div className="flex flex-col items-center gap-3 rounded-xl border border-line-2 bg-surface-2 p-6">
+              {wa.qr ? (
+                <>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={wa.qr}
+                    alt="WhatsApp pairing QR code"
+                    className="h-[220px] w-[220px] rounded-lg bg-white p-2"
+                  />
+                  <p className="max-w-xs text-center text-[0.78rem] leading-relaxed text-muted">
+                    WhatsApp → <span className="text-ink">Linked devices</span> →{" "}
+                    <span className="text-ink">Link a device</span>, then scan this.
+                    The code refreshes every few seconds.
+                  </p>
+                </>
+              ) : (
+                <p className="font-mono text-[0.62rem] uppercase tracking-[0.18em] text-faint">
+                  Waiting for the bridge to issue a code…
+                </p>
+              )}
+            </div>
+          )}
+
+          {wa.qrError && <Note>{wa.qrError}</Note>}
+
+          {!wa.ownersConfigured && (
+            <Note>
+              Heads up: LUCID_OWNER_NUMBERS isn&apos;t set, so WhatsApp ingest is
+              closed. Lucid&apos;s number is public — until you list your own
+              number, every message is ignored so strangers can&apos;t write to
+              your archive.
+            </Note>
+          )}
+        </ConnectorCard>
 
         {/* Google Calendar — reuses the Gmail OAuth connection */}
         <ConnectorCard
