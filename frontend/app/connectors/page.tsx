@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useCallback } from "react";
 import { Shell, PageHeader, Reveal, GhostButton } from "../ui";
 import { API } from "../api";
 
@@ -62,17 +62,99 @@ function useGmail() {
   return { status, syncing, synced, sync };
 }
 
+// WhatsApp has two independent gates, and conflating them is confusing:
+//
+//   serviceReady — Lucid's own account is linked to WhatsApp. An *operator*
+//                  step: someone holding the business SIM scans a QR, once,
+//                  when the server is set up. Users never do this.
+//   paired       — this user proved they own their number by messaging Lucid a
+//                  one-time code. This is the *user's* connect flow.
+//
+// Both must be true before WhatsApp works.
 function useWhatsApp() {
-  const [status, setStatus] = useState<Status>("checking");
+  const [serviceReady, setServiceReady] = useState<boolean | null>(null);
+  const [paired, setPaired] = useState(false);
+  const [code, setCode] = useState<string | null>(null);
+  const [claiming, setClaiming] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const refresh = useCallback(
+    () =>
+      statusFetch("/whatsapp/status")
+        .then((r) => r.json())
+        .then((d) => {
+          setServiceReady(Boolean(d.ready));
+          setPaired(Boolean(d.paired));
+          return Boolean(d.paired);
+        })
+        .catch(() => {
+          setServiceReady(false);
+          return false;
+        }),
+    [],
+  );
 
   useEffect(() => {
-    statusFetch("/whatsapp/status")
-      .then((r) => r.json())
-      .then((d) => setStatus(d.ready ? "connected" : "disconnected"))
-      .catch(() => setStatus("disconnected"));
-  }, []);
+    refresh();
+  }, [refresh]);
 
-  return { status };
+  // Once a code is issued, poll until the user's message lands and the backend
+  // binds their number.
+  useEffect(() => {
+    if (!claiming) return;
+    let cancelled = false;
+
+    const tick = async () => {
+      try {
+        const r = await statusFetch("/whatsapp/pair/status");
+        const d = await r.json();
+        if (cancelled) return;
+        if (d.paired) {
+          setClaiming(false);
+          setCode(null);
+          setPaired(true);
+          return;
+        }
+        if (d.expired) {
+          setClaiming(false);
+          setCode(null);
+          setError("That code expired. Try again.");
+        }
+      } catch {
+        /* transient — keep polling */
+      }
+    };
+
+    const id = setInterval(tick, 2500);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [claiming]);
+
+  async function connect() {
+    setError(null);
+    try {
+      const r = await fetch(`${API}/whatsapp/pair/start`, { method: "POST" });
+      const d = await r.json();
+      setCode(d.code);
+      setClaiming(true);
+    } catch {
+      setError("Couldn't reach the backend.");
+    }
+  }
+
+  async function disconnect() {
+    await fetch(`${API}/whatsapp/pair`, { method: "DELETE" }).catch(() => {});
+    setPaired(false);
+    setCode(null);
+    setClaiming(false);
+  }
+
+  const status: Status =
+    serviceReady === null ? "checking" : paired ? "connected" : "disconnected";
+
+  return { status, serviceReady, paired, code, claiming, error, connect, disconnect };
 }
 
 function useTelegram() {
@@ -491,43 +573,66 @@ export default function ConnectorsPage() {
         <ConnectorCard
           icon={<WhatsAppIcon />}
           name="WhatsApp"
-          description="Messages from Lucid's business number land in your archive and trigger AI-generated replies."
+          description="Message Lucid on WhatsApp. Notes land in your archive, questions get answered from it, and commands run your todo list."
           status={wa.status}
           guide="WHATSAPP_CONNECT.md"
           actions={
-            wa.status === "connected" ? (
+            wa.status === "checking" ? (
+              <span className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-faint">
+                Checking…
+              </span>
+            ) : wa.paired ? (
               <>
-                <GhostButton
-                  onClick={() =>
-                    fetch(`${API}/whatsapp/status`)
-                      .then((r) => r.json())
-                      .then((d) => alert(d.ready ? "WhatsApp bridge is live." : "Bridge offline."))
-                  }
-                >
-                  Test
-                </GhostButton>
+                <a href={waLink()} target="_blank" rel="noopener noreferrer">
+                  <GhostButton>Message Lucid →</GhostButton>
+                </a>
+                <GhostButton onClick={wa.disconnect}>Unlink</GhostButton>
                 <span className="ml-auto font-mono text-[0.6rem] uppercase tracking-[0.18em] text-faint">
                   +91 99952 65115
                 </span>
               </>
-            ) : wa.status === "checking" ? (
-              <span className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-faint">
-                Checking…
-              </span>
             ) : (
-              <a
-                href={waLink()}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => {
-                  (e.currentTarget as HTMLAnchorElement).href = waLink();
-                }}
-              >
-                <GhostButton>Message Lucid on WhatsApp →</GhostButton>
-              </a>
+              <GhostButton onClick={wa.connect} disabled={wa.claiming || !wa.serviceReady}>
+                {wa.claiming ? "Waiting for your message…" : "Connect my WhatsApp"}
+              </GhostButton>
             )
           }
-        />
+        >
+          {wa.claiming && wa.code && (
+            <div className="flex flex-col items-center gap-4 rounded-xl border border-line-2 bg-surface-2 p-6">
+              <p className="text-center text-[0.82rem] leading-relaxed text-muted">
+                Send this code to Lucid on WhatsApp from the phone you want to
+                connect. Receiving it is how Lucid knows the number is yours.
+              </p>
+              <div className="font-mono text-2xl tracking-[0.3em] text-ink">
+                {wa.code}
+              </div>
+              <a
+                href={`https://wa.me/${LUCID_WA}?text=${encodeURIComponent(wa.code)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <GhostButton>Open WhatsApp with the code →</GhostButton>
+              </a>
+              <p className="font-mono text-[0.6rem] uppercase tracking-[0.18em] text-faint">
+                Expires in 5 minutes · waiting…
+              </p>
+            </div>
+          )}
+
+          {wa.error && <Note>{wa.error}</Note>}
+
+          {/* Operator concern, not the user's: the Lucid service itself has to be
+              linked to WhatsApp before anyone can message it. */}
+          {wa.serviceReady === false && (
+            <Note>
+              Lucid&apos;s WhatsApp service is offline, so it can&apos;t receive
+              messages yet. That&apos;s a one-time server setup — whoever runs
+              Lucid links the business number by scanning a QR in the
+              whatsapp_service terminal. Nothing for you to scan.
+            </Note>
+          )}
+        </ConnectorCard>
 
         {/* Google Calendar — reuses the Gmail OAuth connection */}
         <ConnectorCard

@@ -11,6 +11,7 @@ health_mock_db.json
 finance_mock_db.json
 messages_mock_db.json
 telegram_config.json
+whatsapp_config.json
 todos.json
 tokens.json
 ego_insights.json
@@ -23,8 +24,10 @@ briefing.json
 # WhatsApp bridge — session auth (Chromium profile) and local deps
 backend/whatsapp_service/.wwebjs_auth/
 backend/whatsapp_service/node_modules/
+backend/whatsapp_service/.wwebjs_cache/
 
 # Local session notes (gitignored context file)
 SESSION_NOTES.md
 agent_report.json
 snn_report.json
+backend/whatsapp_service/link-qr.png

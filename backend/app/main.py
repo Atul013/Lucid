@@ -19,6 +19,7 @@ from app.routers.sentiment import router as sentiment_router
 from app.routers.health import router as health_router
 from app.routers.finance import router as finance_router
 from app.routers.telegram import router as telegram_router
+from app.routers.whatsapp import router as whatsapp_router
 from app.routers.todos import router as todos_router
 from app.routers.twin import router as twin_router
 from app.routers.agent import router as agent_router
@@ -61,6 +62,7 @@ app.include_router(sentiment_router)
 app.include_router(health_router)
 app.include_router(finance_router)
 app.include_router(telegram_router)
+app.include_router(whatsapp_router)
 app.include_router(todos_router)
 app.include_router(twin_router)
 app.include_router(agent_router)
