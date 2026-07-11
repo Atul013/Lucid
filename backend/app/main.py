@@ -26,6 +26,7 @@ from app.routers.agent import router as agent_router
 from app.routers.snn import router as snn_router
 from app.connectors import telegram as telegram_connector
 from app.connectors import reminders
+from app import security
 
 app = FastAPI(title="Lucid API", docs_url=None, redoc_url=None)
 
@@ -37,6 +38,10 @@ def start_background_workers():
     telegram_connector.start_poller()
     reminders.start()
 
+# Security stack (API key auth, rate limit, body cap, audit log, headers).
+# Must be installed before CORS so CORS stays outermost — see security.install.
+security.install(app)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=os.getenv("ALLOWED_ORIGINS", "http://localhost:3000").split(","),
@@ -45,7 +50,7 @@ app.add_middleware(
     allow_origin_regex=r"^http://(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}):3000$",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "Authorization", "Accept"],
+    allow_headers=["Content-Type", "Authorization", "Accept", "X-API-Key"],
     expose_headers=["Content-Type"],
 )
 
