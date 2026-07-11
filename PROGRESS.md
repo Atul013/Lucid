@@ -35,8 +35,11 @@
 
 | Component | Status | Assigned To | Branch | Notes |
 |---|---|---|---|---|
-| WhatsApp (`whatsapp-web.js`) | 👀 In Review | Atul013 | feature/whatsapp-ingestion | Node bridge + ingest into the shared `messages` archive (PR #43). Rebuilt off development: the old feature/whatsapp-connector branch called a dead chroma API and carried an obsolete landing-page diff |
+| WhatsApp (`whatsapp-web.js`) | 👀 In Review | Atul013 | feature/whatsapp-ingestion | PR #43 — **working end to end**: node bridge, pairing-code ownership, agent replies (todo commands + archive Q&A). Survived WhatsApp's LID migration (identity keyed on chat id, not phone number) |
 | Gmail | ✅ Done | Atul013 | feature/gmail-connector | Gmail API + Google OAuth + sync |
+| WhatsApp — reply formatting + context | 📋 Todo | — | — | Bot replies are plain prose and stateless. Needs WhatsApp-native formatting (*bold*, line breaks) and conversation context so follow-ups make sense |
+| Real data over demo data | 📋 Todo | — | — | **Archive is mostly synthetic**: calendar (211 events) and health (91 records) are seeded mock; Telegram messages = 0. Purge the seed data, sync real Google Calendar, and run the Telegram history import (PR #42) so the AI layers reason over the user's actual life, not `evt_0000` |
+| Telegram — run the history import | 📋 Todo | — | — | PR #42 shipped `/telegram/history/*` (Telethon) but it has never been run — needs api_id/api_hash from my.telegram.org. Until then the archive holds zero Telegram messages |
 | Telegram | ✅ Done | Am4l-babu | feature/telegram-command-menu | Bot API connector + live bot (todo commands, reminders) + web todos page (PR #28); tappable command menu (PR #35 merged) |
 | Telegram — chat history import | 👀 In Review | Atul013 | feature/telegram-history | Telethon user-account session reads existing chats → same `messages` archive as the bot (dedup by message id). Complements PR #28: bot = live commands + delivery, history = past conversations |
 | Connectors UI — easy connect + guides | ✅ Done | Am4l-babu | feature/telegram-connector | Live credential forms on /connectors (Telegram token, Calendar sync, Finance/Health upload) + docs/connect guides (PR #28 merged) |
@@ -75,6 +78,7 @@
 |---|---|---|---|---|
 | Malayalam/Manglish sentiment | ✅ Done | Am4l-babu | feature/malayalam-sentiment | Code-mixed lexicon engine + optional Indic transformer (PR #26) |
 | Digital Twin — simulation engine | ✅ Done | Am4l-babu | feature/twin-simulation | simulate_workload(): stress probability from calendar + health, what-if sliders + risk curves on /twin (PR #30 merged) |
+| Agent — output formatting | 📋 Todo | — | — | Agent replies are an unstructured wall of prose in Telegram/WhatsApp and on /agent. Needs visual structure (headings, bullets, numbers set apart) |
 | Autonomous agent loop | ✅ Done | Am4l-babu | feature/agent-loop | Tool-use loop: investigates twin/calendar/health/archive → drafts, calendar proposals, todos, Telegram wrap-up; /agent UI (PR #32 merged); reliability fix in PR #34 |
 | SNN tripwire | ✅ Done | Am4l-babu | feature/snn-tripwire | Pure-Python LIF layer over 6 life-rhythm streams; /tripwire UI; wake=true launches the agent on fresh trips (PR #39 merged) |
 | Edge deployment (Pi Zero 2 W) | 📋 Todo | — | — | FastAPI + ChromaDB on Pi, low-RAM tuning |
@@ -162,3 +166,5 @@
 | 2026-07-11 | Atul013 | Opened PR #42 (Telegram chat-history import via Telethon) → development |
 | 2026-07-11 | Atul013 | Opened PR #43 (WhatsApp — Node bridge + shared-archive ingest) → development |
 | 2026-07-11 | Am4l-babu | PRs #38, #39 merged — LAN auto-config + SNN tripwire done |
+| 2026-07-12 | Atul013 | WhatsApp connector working end to end (pairing code + agent replies); fixed WhatsApp LID migration breakage |
+| 2026-07-12 | Atul013 | Logged: archive is mostly seeded demo data (calendar/health synthetic, Telegram empty) — AI layers are reasoning over fake inputs |
