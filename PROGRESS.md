@@ -27,7 +27,7 @@
 | Google OAuth | ✅ Done | Atul013 | feature/gmail-connector | Needed for Gmail, Keep, Calendar |
 | Deployment — Vercel (FE) + Azure (BE) | 📋 Todo | — | — | Split deploy: FE free on Vercel, BE on Azure B1s. Budget: ₹9,569 Azure credit must last until Apr 2027. FE reads NEXT_PUBLIC_API_URL; BE CORS via ALLOWED_ORIGINS |
 | Dockerization | 📋 Todo | — | — | Deferred. backend/Dockerfile + compose exist but unused for split deploy; revisit if BE needs containerizing on Azure |
-| Security hardening (API auth + rate limiting) | 🔄 Ongoing | Am4l-babu | feature/security-hardening | X-API-Key middleware, per-IP rate limit, security headers, audit log — architecture adapted from secure_os_layer review |
+| Security hardening (API auth + rate limiting) | 👀 In Review | Am4l-babu | feature/security-hardening | X-API-Key middleware, per-IP rate limit, security headers, audit log — architecture adapted from secure_os_layer review (PR #44) |
 
 ---
 
@@ -137,6 +137,7 @@
 | 2026-07-02 | Am4l-babu | Opened PR #26 (malayalam sentiment) → development |
 | 2026-07-02 | Am4l-babu | Started Google Calendar connector |
 | 2026-07-11 | Am4l-babu | Started security hardening (API key auth + rate limiting) |
+| 2026-07-11 | Am4l-babu | Opened PR #44 (security hardening) → development |
 | 2026-07-02 | Am4l-babu | Opened PR #27 (calendar connector) → development |
 | 2026-07-02 | Am4l-babu | PRs #23, #25, #26, #27 merged — finance, health, sentiment, calendar done |
 | 2026-07-02 | Am4l-babu | Took over Telegram connector (Atul013 had it marked, no branch pushed) + connectors UI easy-connect rework + setup guides |
