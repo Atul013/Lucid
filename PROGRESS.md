@@ -37,7 +37,7 @@
 | WhatsApp (`whatsapp-web.js`) | 🔄 Ongoing | Atul013 | feature/whatsapp-connector | Node.js microservice bridge; spare SIM Business account set up |
 | Gmail | ✅ Done | Atul013 | feature/gmail-connector | Gmail API + Google OAuth + sync |
 | Telegram | ✅ Done | Am4l-babu | feature/telegram-command-menu | Bot API connector + live bot (todo commands, reminders) + web todos page (PR #28); tappable command menu (PR #35 merged) |
-| Telegram — chat history import | 🔄 Ongoing | Atul013 | feature/telegram-history | Telethon user-account session reads existing chats → same `messages` archive as the bot (dedup by message id). Complements PR #28: bot = live commands + delivery, history = past conversations |
+| Telegram — chat history import | 👀 In Review | Atul013 | feature/telegram-history | Telethon user-account session reads existing chats → same `messages` archive as the bot (dedup by message id). Complements PR #28: bot = live commands + delivery, history = past conversations |
 | Connectors UI — easy connect + guides | ✅ Done | Am4l-babu | feature/telegram-connector | Live credential forms on /connectors (Telegram token, Calendar sync, Finance/Health upload) + docs/connect guides (PR #28 merged) |
 | Financial data (mock CSV) | ✅ Done | Am4l-babu | feature/financial-ingestion | Bank-statement CSV parser → categorize spending → ChromaDB (PR #23) |
 | Health data (mock smartwatch JSON) | ✅ Done | Am4l-babu | feature/health-ingestion | Sleep, HRV, steps → ChromaDB + sentiment correlation (PR #25) |
@@ -156,4 +156,4 @@
 | 2026-07-07 | Am4l-babu | Opened PR #39 (SNN tripwire + /tripwire UI) → development; live wake test launched a real agent run |
 | 2026-07-11 | Atul013 | Cut PR #41 (LAN auto-config) development → main |
 | 2026-07-11 | Atul013 | Started Telegram chat-history import (Telethon) — pairs with the bot connector |
-
+| 2026-07-11 | Atul013 | Opened PR #42 (Telegram chat-history import via Telethon) → development |
