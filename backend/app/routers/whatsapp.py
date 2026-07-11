@@ -44,7 +44,23 @@ def _write_config(cfg: dict):
 
 
 def _norm(number: str) -> str:
+    # Tolerate a LID/JID suffix leaking through ("6837…@lid") rather than
+    # binding it as if it were a phone number.
+    number = number.split("@", 1)[0]
     return number.lstrip("+").replace(" ", "").replace("-", "")
+
+
+def _is_phone_number(number: str) -> bool:
+    """A real MSISDN, not a WhatsApp LID or internal id.
+
+    Must be checked on the raw value: a LID is all digits too ("6837…@lid"),
+    so once the suffix is stripped it is indistinguishable from a phone number.
+    The "@" is the only tell.
+    """
+    if "@" in number:
+        return False
+    n = number.lstrip("+").replace(" ", "").replace("-", "")
+    return n.isdigit() and 8 <= len(n) <= 15
 
 
 def _owner_numbers() -> set[str]:
@@ -103,6 +119,11 @@ def _claim_if_pairing_code(number: str, text: str) -> bool:
     if text.strip().upper() != pending["code"]:
         return False
     if datetime.now(timezone.utc) > datetime.fromisoformat(pending["expires_at"]):
+        return False
+    if not _is_phone_number(number):
+        # The bridge should always resolve a real phone number. If a LID reaches
+        # us, binding it would create an owner that never matches again.
+        log.warning("WA pairing refused — %r is not a phone number", number)
         return False
 
     cfg = _read_config()

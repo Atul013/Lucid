@@ -53,9 +53,16 @@ client.on("message", async (msg) => {
   if (msg.fromMe) return; // ignore echoes of our own sends
 
   const contact = await msg.getContact();
+
+  // WhatsApp now addresses chats by LID (`6837…@lid`), not `<number>@c.us`, so
+  // stripping "@c.us" off msg.from can hand back a LID instead of a phone
+  // number — which silently breaks the owner allowlist and the reply path.
+  // contact.number is the real phone number; fall back to stripping either suffix.
+  const number = contact.number || msg.from.replace(/@(c\.us|lid|s\.whatsapp\.net)$/, "");
+
   const payload = {
-    from: contact.pushname || contact.number,
-    number: msg.from.replace("@c.us", ""),
+    from: contact.pushname || number,
+    number,
     body: msg.body,
     timestamp: msg.timestamp,
     type: "whatsapp",
