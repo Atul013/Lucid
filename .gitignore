@@ -23,6 +23,7 @@ briefing.json
 # WhatsApp bridge — session auth (Chromium profile) and local deps
 backend/whatsapp_service/.wwebjs_auth/
 backend/whatsapp_service/node_modules/
+backend/whatsapp_service/.wwebjs_cache/
 
 # Local session notes (gitignored context file)
 SESSION_NOTES.md
