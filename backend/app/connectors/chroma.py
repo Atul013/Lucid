@@ -77,6 +77,9 @@ if MOCK_MODE:
     def all_emails() -> list[dict]:
         return _read_db()
 
+    def wipe_emails():
+        MOCK_FILE.unlink(missing_ok=True)
+
     FINANCE_MOCK_FILE = Path("finance_mock_db.json")
 
     def _read_finance_db() -> list[dict]:
@@ -104,6 +107,9 @@ if MOCK_MODE:
 
     def all_transactions() -> list[dict]:
         return _read_finance_db()
+
+    def wipe_transactions():
+        FINANCE_MOCK_FILE.unlink(missing_ok=True)
 
     HEALTH_MOCK_FILE = Path("health_mock_db.json")
 
@@ -135,6 +141,9 @@ if MOCK_MODE:
     def all_health() -> list[dict]:
         return _read_health_db()
 
+    def wipe_health():
+        HEALTH_MOCK_FILE.unlink(missing_ok=True)
+
     EVENTS_MOCK_FILE = Path("calendar_mock_db.json")
 
     def _read_events_db() -> list[dict]:
@@ -164,6 +173,9 @@ if MOCK_MODE:
 
     def all_events() -> list[dict]:
         return _read_events_db()
+
+    def wipe_events():
+        EVENTS_MOCK_FILE.unlink(missing_ok=True)
 
     MESSAGES_MOCK_FILE = Path("messages_mock_db.json")
 
@@ -197,8 +209,19 @@ if MOCK_MODE:
     def all_messages() -> list[dict]:
         return _read_messages_db()
 
+    def wipe_messages():
+        MESSAGES_MOCK_FILE.unlink(missing_ok=True)
+
 else:
     _CLIENT = chromadb.PersistentClient(path=os.getenv("CHROMA_PATH", "chroma_data"))
+
+    def _safe_delete_collection(name: str):
+        """Wipe a collection that may never have been created (nothing was
+        ever ingested into it) — delete_collection raises in that case."""
+        try:
+            _CLIENT.delete_collection(name)
+        except Exception:
+            pass
 
     def _collection():
         return _CLIENT.get_or_create_collection("emails")
@@ -243,6 +266,9 @@ else:
             for d, m in zip(data["documents"], data["metadatas"])
         ]
 
+    def wipe_emails():
+        _safe_delete_collection("emails")
+
     def _transactions():
         return _CLIENT.get_or_create_collection("transactions")
 
@@ -273,6 +299,9 @@ else:
         data = _transactions().get(include=["metadatas"])
         return list(data["metadatas"])
 
+    def wipe_transactions():
+        _safe_delete_collection("transactions")
+
     def _health_collection():
         return _CLIENT.get_or_create_collection("health")
 
@@ -300,6 +329,9 @@ else:
             {"id": i, "text": d, **m}
             for i, d, m in zip(data["ids"], data["documents"], data["metadatas"])
         ]
+
+    def wipe_health():
+        _safe_delete_collection("health")
 
     def _events_collection():
         return _CLIENT.get_or_create_collection("events")
@@ -329,6 +361,9 @@ else:
             for i, d, m in zip(data["ids"], data["documents"], data["metadatas"])
         ]
 
+    def wipe_events():
+        _safe_delete_collection("events")
+
     def _messages_collection():
         return _CLIENT.get_or_create_collection("messages")
 
@@ -356,3 +391,6 @@ else:
             {"id": i, "text": d, **m}
             for i, d, m in zip(data["ids"], data["documents"], data["metadatas"])
         ]
+
+    def wipe_messages():
+        _safe_delete_collection("messages")
