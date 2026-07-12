@@ -128,8 +128,25 @@ def chat(messages: list[dict], max_tokens: int = 1024, temperature: float = 0.4)
                     "reason": "The twin shows cutting 5h/week of meetings and sleeping +1h drops your daily stress risk from ~80% to ~6%. The evening status call is the biggest after-hours contributor and duplicates the morning war-room.",
                 }},
                 {"tool": "add_todo", "args": {"text": "Confirm Mom's birthday dinner — Sunday 7 PM (promised Grace)"}},
-                {"tool": "send_telegram", "args": {"text": "Weekly check: your stress risk is HIGH (~80%/day) after the launch crunch — sleep 6.6h, HRV down. I drafted a reply to Grace about Sunday's dinner, proposed declining the evening status call (−5h meetings + 1h sleep → risk drops to ~6%), and added a todo so you don't miss Sunday. Drafts and proposals are on your Agent page for approval."}},
-                {"tool": "finish", "args": {"summary": "Stress risk is high (~80%/day) driven by the June launch crunch: elevated trailing meeting load, 6.6h sleep, suppressed HRV. Simulation shows −5h meetings + 1h sleep brings risk to ~6%. Actions: drafted a reply to Grace Chen about Sunday's family dinner, proposed declining the redundant evening launch status call, added a reminder todo, and sent the wrap-up to Telegram. Drafts and calendar changes await user approval."}},
+                {"tool": "send_telegram", "args": {
+                    "headline": "Stress risk is HIGH (~80%/day) after the launch crunch.",
+                    "bullets": [
+                        "Sleep down to 6.6h/night, HRV suppressed",
+                        "Drafted a reply to Grace about Sunday's dinner",
+                        "Proposed declining the evening status call (−5h meetings + 1h sleep → risk drops to ~6%)",
+                        "Drafts and proposals are on your Agent page for approval",
+                    ],
+                }},
+                {"tool": "finish", "args": {
+                    "headline": "Stress risk is high (~80%/day), driven by the June launch crunch.",
+                    "bullets": [
+                        "Elevated trailing meeting load, 6.6h sleep, suppressed HRV",
+                        "Simulation: −5h meetings + 1h sleep brings risk to ~6%",
+                        "Drafted a reply to Grace Chen about Sunday's family dinner",
+                        "Proposed declining the redundant evening launch status call",
+                        "Added a reminder todo and sent the wrap-up to Telegram",
+                    ],
+                }},
             ]
             return json.dumps(script[min(step, len(script) - 1)])
 
