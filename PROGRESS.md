@@ -85,7 +85,7 @@
 | Edge deployment (Pi Zero 2 W) | 📋 Todo | — | — | FastAPI + ChromaDB on Pi, low-RAM tuning |
 | ESP32 environment nodes | 📋 Todo | — | — | BME680 + mic dB via MQTT → productivity correlation |
 | FOV camera + assistive interaction | 📋 Todo | — | — | MediaPipe posture/presence; faster-whisper offline STT; sign language |
-| Twin × Briefing integration | 🔄 Ongoing | Am4l-babu | feature/twin-briefing-integration | Surface the twin's stress forecast and the agent's latest run in the Morning Briefing — everything already shares ChromaDB/the same connectors, mostly wiring (PLAN.md Phase 3 next-up #1) |
+| Twin × Briefing integration | ✅ Done | Am4l-babu | feature/twin-briefing-integration | Surfaces the twin's stress forecast and the agent's latest run as structured fields on /briefing, plus two stat cards on /today (PR #50 merged). Visually verified with Playwright — both cards render correctly, zero console errors |
 
 ---
 
@@ -155,6 +155,7 @@
 | 2026-07-12 | Am4l-babu | Fixed SecureStore web-target crash (found by running expo start --web), pushed to PR #49 |
 | 2026-07-12 | Am4l-babu | PR #49 merged — mobile app scaffold done; logged on-device LLM as the next scoped TODO |
 | 2026-07-12 | Am4l-babu | Started Twin × Briefing integration — surfacing stress forecast + latest agent run in the Morning Briefing |
+| 2026-07-12 | Am4l-babu | Opened PR #50 (twin x briefing) → development, then visually verified with Playwright and merged |
 | 2026-07-02 | Am4l-babu | Opened PR #27 (calendar connector) → development |
 | 2026-07-02 | Am4l-babu | PRs #23, #25, #26, #27 merged — finance, health, sentiment, calendar done |
 | 2026-07-02 | Am4l-babu | Took over Telegram connector (Atul013 had it marked, no branch pushed) + connectors UI easy-connect rework + setup guides |
