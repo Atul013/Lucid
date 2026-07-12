@@ -11,7 +11,7 @@ const MouseEnterContext = createContext<MouseEnterCtx>({ isMouseEntered: false }
 /* Touch devices synthesize erratic mouse events from taps/scrolls, which makes
    the 3D tilt flip out. Only enable the effect on true fine-pointer devices. */
 function useFinePointer() {
-  const [fine, setFine] = useState(false);
+  const [fine, setFine] = useState(true); // default true so PC never flashes non-tilting on first paint
   useEffect(() => {
     const mq = window.matchMedia("(hover: hover) and (pointer: fine)");
     setFine(mq.matches);
@@ -72,8 +72,8 @@ export function CardContainer({
           onMouseEnter={() => setIsMouseEntered(true)}
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          className={`relative transition-all duration-200 ease-linear ${className}`}
-          style={{ transformStyle: "preserve-3d" }}
+          className={`relative ${className}`}
+          style={{ transformStyle: "preserve-3d", transition: "transform 0.15s ease-out", willChange: "transform" }}
         >
           {children}
         </div>

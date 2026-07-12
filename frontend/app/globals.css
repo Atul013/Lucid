@@ -420,4 +420,8 @@ body::after {
     grid-column: auto !important;
     grid-row: auto !important;
   }
+  .archive-bento-grid {
+    grid-template-columns: 1fr !important;
+    grid-template-rows: unset !important;
+  }
 }

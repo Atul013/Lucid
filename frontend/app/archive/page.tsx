@@ -515,11 +515,18 @@ function SourceBento({ sources }: { sources: Result[] }) {
       ref={gridRef}
       onMouseMove={onGridMove}
       onMouseLeave={onGridLeave}
-      className={`grid gap-3 ${useBento ? "max-sm:grid-cols-1 sm:grid-cols-3 sm:[grid-template-rows:repeat(3,minmax(108px,auto))]" : "max-sm:grid-cols-1 sm:grid-cols-3"}`}
+      className="archive-bento-grid grid gap-3"
       style={
-        !useBento
-          ? { gridAutoRows: "minmax(108px, auto)", gridAutoFlow: "dense" }
-          : undefined
+        useBento
+          ? {
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gridTemplateRows: "repeat(3, minmax(108px, auto))",
+            }
+          : {
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gridAutoRows: "minmax(108px, auto)",
+              gridAutoFlow: "dense",
+            }
       }
     >
       {sources.map((r, i) => {
@@ -834,7 +841,7 @@ function LoadingSkeleton({ mode }: { mode: Mode }) {
         {mode === "ask" ? "Searching sources…" : "Finding matches…"}
       </p>
       {/* Skeleton bento */}
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="archive-bento-grid grid gap-3" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
         {[0, 1, 2, 3].map((i) => {
           const span = i % 4 === 0 ? "2" : i % 4 === 1 ? "1" : i % 4 === 2 ? "1" : "2";
           return (
