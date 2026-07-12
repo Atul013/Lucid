@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from datetime import date
 from fastapi import APIRouter, HTTPException
-from app.connectors import agent, chroma, llm, twin
+from app.connectors import agent, chroma, finance, llm, twin
 
 router = APIRouter()
 
@@ -51,6 +51,20 @@ def _agent_snapshot() -> dict | None:
     }
 
 
+def _finance_snapshot() -> dict | None:
+    """Subscription waste + next-month cash-flow forecast, or None if no
+    transactions have been ingested yet."""
+    summary = finance.summarize(chroma.all_transactions())
+    if summary["transactions"] == 0:
+        return None
+    subs = summary["subscriptions"]
+    return {
+        "subscriptions_monthly_cost": subs["monthly_cost"],
+        "subscription_count": len(subs["items"]),
+        "forecast_next_month_net": summary["forecast"]["next_month_net"],
+    }
+
+
 @router.get("/briefing")
 def get_briefing():
     if CACHE.exists():
@@ -68,6 +82,7 @@ def build_briefing():
     goals = _read(GOALS).get("goals", [])
     twin_snapshot = _twin_snapshot()
     agent_snapshot = _agent_snapshot()
+    finance_snapshot = _finance_snapshot()
 
     recent = "\n".join(f"- From {e['from']}: {e['subject']}" for e in emails)
     themes = "; ".join(t.get("title", "") for t in ego.get("themes", []))
@@ -83,6 +98,12 @@ def build_briefing():
         )
     if agent_snapshot and agent_snapshot["summary"]:
         signals += f"\nLast agent run: {agent_snapshot['summary'][:200]}"
+    if finance_snapshot:
+        signals += (
+            f"\nSubscriptions: {finance_snapshot['subscription_count']} costing "
+            f"${finance_snapshot['subscriptions_monthly_cost']}/mo. Forecast next "
+            f"month's net cash flow: ${finance_snapshot['forecast_next_month_net']}"
+        )
 
     text = llm.chat(
         [
@@ -99,6 +120,7 @@ def build_briefing():
         "briefing": text,
         "twin": twin_snapshot,
         "agent": agent_snapshot,
+        "finance": finance_snapshot,
     }
     CACHE.write_text(json.dumps(result), encoding="utf-8")
     return result
