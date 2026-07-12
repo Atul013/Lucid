@@ -27,9 +27,9 @@
 | Google OAuth | ✅ Done | Atul013 | feature/gmail-connector | Needed for Gmail, Keep, Calendar |
 | Deployment — Vercel (FE) + Azure (BE) | 📋 Todo | — | — | Split deploy: FE free on Vercel, BE on Azure B1s. Budget: ₹9,569 Azure credit must last until Apr 2027. FE reads NEXT_PUBLIC_API_URL; BE CORS via ALLOWED_ORIGINS |
 | Dockerization | 📋 Todo | — | — | Deferred. backend/Dockerfile + compose exist but unused for split deploy; revisit if BE needs containerizing on Azure |
-| Tests + CI | 👀 In Review | Am4l-babu | feature/backend-tests-ci | 25 pytest tests (finance parser, twin simulation, agent cooldown) + GitHub Actions workflow. First push failed CI for real (sys.path issue), fixed with pytest.ini, confirmed green on ubuntu-latest (PR #56) |
+| Tests + CI | ✅ Done | Am4l-babu | feature/backend-tests-ci | 25 pytest tests (finance parser, twin simulation, agent cooldown) + GitHub Actions workflow. First push failed CI for real (sys.path issue), fixed with pytest.ini, confirmed green on ubuntu-latest (PR #56 merged) |
 | Security hardening (API auth + rate limiting) | ✅ Done | Am4l-babu | feature/security-hardening | X-API-Key middleware, per-IP rate limit, security headers, audit log — architecture adapted from secure_os_layer review (PR #44 merged) |
-| Data protection hardening | 👀 In Review | Am4l-babu | feature/data-protection-hardening | Encryption at rest for local JSON stores + OAuth/bot secrets, agent prompt-injection guards, Telegram sender-authorization fix — 37 pytest tests passing (PR #57) |
+| Data protection hardening | 👀 In Review | Am4l-babu | feature/data-protection-hardening | Encryption at rest extended to every local JSON store (Ego/Drift/Relationships/Graph/Timeline/SNN caches + WhatsApp config, not just the mock archive), agent prompt-injection guard, Telegram sender-authorization fix + a self-caught follow-up fix (group chats could seize ownership) — 39 pytest tests passing (PR #57) |
 
 ---
 
@@ -149,6 +149,7 @@
 | 2026-07-02 | Am4l-babu | Started Google Calendar connector |
 | 2026-07-12 | Am4l-babu | Started data protection hardening (encryption at rest, prompt-injection guards, Telegram auth fix) |
 | 2026-07-12 | Am4l-babu | Opened PR #57 (data protection hardening) → development |
+| 2026-07-12 | Am4l-babu | PR #57 follow-up: caught + fixed own regression (group chats could seize Telegram bot ownership), extended encryption to Ego/Drift/Relationships/Graph/Timeline/SNN/WhatsApp stores, refreshed PLAN.md (was 10 days stale) |
 | 2026-07-11 | Am4l-babu | Started security hardening (API key auth + rate limiting) |
 | 2026-07-11 | Am4l-babu | Opened PR #44 (security hardening) → development |
 | 2026-07-12 | Am4l-babu | PR #44 merged — security hardening done |
