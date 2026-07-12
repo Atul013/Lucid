@@ -94,8 +94,14 @@ body::before {
 /* Grid cell ripple — cells near click point pulse amber and fade. */
 @keyframes cell-ripple {
   0%   { background-color: transparent; }
-  35%  { background-color: rgba(255, 125, 60, 0.05); }
+  30%  { background-color: rgba(255, 125, 60, 0.4); }
   100% { background-color: transparent; }
+}
+
+/* Checkbox ripple rings — concentric circles expanding from click point. */
+@keyframes lucid-ripple {
+  0%   { width: 0; height: 0; opacity: 1; }
+  100% { width: 80px; height: 80px; opacity: 0; }
 }
 
 /* Checkmark icon pops in when a todo is marked done. */
@@ -354,25 +360,22 @@ body::after {
   animation: bob 1.8s ease-in-out infinite;
 }
 
-/* Comet streak — diagonal float across card */
-@keyframes lucid-comet {
+/* Aceternity meteor streak — diagonal float across card */
+@keyframes meteor {
   0% {
-    transform: rotate(35deg) translateX(-120px) translateY(-40px);
-    opacity: 0;
-  }
-  5% {
+    transform: rotate(215deg) translateX(0);
     opacity: 1;
   }
-  80% {
+  70% {
     opacity: 1;
   }
   100% {
-    transform: rotate(35deg) translateX(600px) translateY(200px);
+    transform: rotate(215deg) translateX(-500px);
     opacity: 0;
   }
 }
-.comet-streak {
-  animation-name: lucid-comet;
+.animate-meteor {
+  animation-name: meteor;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
 }
