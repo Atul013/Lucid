@@ -31,7 +31,7 @@
 | Security hardening (API auth + rate limiting) | ✅ Done | Am4l-babu | feature/security-hardening | X-API-Key middleware, per-IP rate limit, security headers, audit log — architecture adapted from secure_os_layer review (PR #44 merged) |
 | Data protection hardening | ✅ Done | Am4l-babu | feature/data-protection-hardening | Encryption at rest extended to every local JSON store (Ego/Drift/Relationships/Graph/Timeline/SNN caches + WhatsApp config, not just the mock archive), agent prompt-injection guard, Telegram sender-authorization fix + a self-caught follow-up fix (group chats could seize ownership) — 39 pytest tests passing (PR #57 merged) |
 | Data export / right-to-delete | ✅ Done | Am4l-babu | feature/data-export-delete | GET /privacy/export bundles every local store (archive + every derived cache + credentials) as one JSON download; DELETE /privacy/purge?confirm=true wipes the same footprint. Added wipe_*() to chroma.py (mock + real) since no delete-everything path existed for the archive collections (PR #58 merged) |
-| Mock-mode search — real embeddings | 👀 In Review | Am4l-babu | feature/mock-mode-embeddings | Mock-mode search (`chroma.py`, used when chromadb can't compile locally) now ranks by real cosine similarity via `fastembed`'s ONNX-quantized MiniLM (prebuilt wheels, no C++ toolchain needed) instead of keyword overlap; degrades to keyword overlap if the model can't load. Distinct from Atul013's Ongoing Archive semantic search (that's the real ChromaDB+NIM RAG path) — 53 pytest tests passing (PR #60) |
+| Mock-mode search — real embeddings | ✅ Done | Am4l-babu | feature/mock-mode-embeddings | Mock-mode search (`chroma.py`, used when chromadb can't compile locally) now ranks by real cosine similarity via `fastembed`'s ONNX-quantized MiniLM (prebuilt wheels, no C++ toolchain needed) instead of keyword overlap; degrades to keyword overlap if the model can't load. Distinct from Atul013's Ongoing Archive semantic search (that's the real ChromaDB+NIM RAG path) — 58 pytest tests passing (PR #60 merged) |
 
 ---
 
@@ -41,7 +41,7 @@
 |---|---|---|---|---|
 | WhatsApp (`whatsapp-web.js`) | 👀 In Review | Atul013 | feature/whatsapp-ingestion | PR #43 — **working end to end**: node bridge, pairing-code ownership, agent replies (todo commands + archive Q&A). Survived WhatsApp's LID migration (identity keyed on chat id, not phone number) |
 | Gmail | ✅ Done | Atul013 | feature/gmail-connector | Gmail API + Google OAuth + sync |
-| WhatsApp — reply formatting + context | 📋 Todo | — | — | Bot replies are plain prose and stateless. Needs WhatsApp-native formatting (*bold*, line breaks) and conversation context so follow-ups make sense |
+| WhatsApp — reply formatting + context | 🔄 Ongoing | Am4l-babu | feature/whatsapp-reply-formatting | Bot replies are plain prose and stateless. Adding WhatsApp-native formatting (*bold*, line breaks) and short conversation context so follow-ups make sense. Picked since other ready items are blocked (Telegram history import needs api_id/api_hash; Telegram briefing delivery overlaps Atul013's Ongoing Morning Briefing; scheduled agent runs needs go-ahead) |
 | Real data over demo data | 📋 Todo | — | — | **Archive is mostly synthetic**: calendar (211 events) and health (91 records) are seeded mock; Telegram messages = 0. Purge the seed data, sync real Google Calendar, and run the Telegram history import (PR #42) so the AI layers reason over the user's actual life, not `evt_0000` |
 | Telegram — run the history import | 📋 Todo | — | — | PR #42 shipped `/telegram/history/*` (Telethon) but it has never been run — needs api_id/api_hash from my.telegram.org. Until then the archive holds zero Telegram messages |
 | Telegram | ✅ Done | Am4l-babu | feature/telegram-command-menu | Bot API connector + live bot (todo commands, reminders) + web todos page (PR #28); tappable command menu (PR #35 merged) |
@@ -202,3 +202,4 @@
 | 2026-07-12 | Am4l-babu | Opened PR #58 (data export / right-to-delete: /privacy/export + /privacy/purge) → development |
 | 2026-07-12 | Am4l-babu | Checked mobile on-device LLM binding (llama.rn) — NDK missing, ANDROID_HOME unset, no Xcode on Windows; deferred. Started mock-mode search embeddings instead (fastembed ONNX MiniLM, no compiler needed) |
 | 2026-07-12 | Am4l-babu | PR #58 merged — data export/right-to-delete done. Opened PR #60 (mock-mode search embeddings) → development |
+| 2026-07-12 | Am4l-babu | PR #60 merged (development→main cut also landed). Started WhatsApp reply formatting + conversation context |
