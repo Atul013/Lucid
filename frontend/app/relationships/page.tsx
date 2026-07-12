@@ -26,16 +26,19 @@ type Sim = Node & { x: number; y: number; vx: number; vy: number; r: number };
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const GC = {
-  bg: "#0c0c10",
-  bgMid: "#12100e",
-  person: "#f0e4d0",
-  personGlow: "rgba(240,228,208,0.18)",
+  bg: "#060404",
+  person: "#e8d8b8",
   topic: "#ff7d3c",
-  topicGlow: "rgba(255,125,60,0.22)",
-  edgeFaint: "rgba(200,180,150,0.08)",
+  edgeIce: "rgba(220,165,90,1)",
   edgeActive: "#ff7d3c",
-  grid: "rgba(255,255,255,0.025)",
 };
+
+function hexRgba(hex: string, a: number) {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${a})`;
+}
 
 const MAP_DOTS = [
   { start: { lat: 37.7749, lng: -122.4194 }, end: { lat: 51.5074, lng: -0.1278  } },
@@ -394,18 +397,49 @@ function Constellation({ graph }: { graph: Graph }) {
     let W = 0, H = 0;
     const dpr = window.devicePixelRatio || 1;
 
+    // ── Background stars (generated once per resize) ──────────────────────────
+    type Star = { x: number; y: number; r: number; baseAlpha: number; speed: number; phase: number; warm: boolean };
+    let stars: Star[] = [];
+
+    function buildStars() {
+      stars = [];
+      if (W === 0 || H === 0) return;
+      const count = Math.floor((W * H) / 3200);
+      for (let i = 0; i < count; i++) {
+        const rnd = Math.random();
+        stars.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          r: rnd < 0.6 ? 0.35 : rnd < 0.88 ? 0.7 : 1.15,
+          baseAlpha: 0.15 + Math.random() * 0.7,
+          speed: 0.00025 + Math.random() * 0.0009,
+          phase: Math.random() * Math.PI * 2,
+          warm: Math.random() < 0.35,
+        });
+      }
+    }
+
     function resize() {
       const rect = canvas!.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
       W = rect.width; H = rect.height;
       canvas!.width = W * dpr; canvas!.height = H * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      buildStars();
     }
-    resize();
 
+    // Run resize first so W/H are set before nodes are positioned
+    resize();
+    const ro = new ResizeObserver(() => resize());
+    ro.observe(canvas);
+
+    // ── Physics nodes / edges ─────────────────────────────────────────────────
+    // Initialise positions from real W/H (already set by resize() above)
+    const cx0 = W > 0 ? W / 2 : 400, cy0 = H > 0 ? H / 2 : 300;
     const nodes: Sim[] = graph.nodes.map((n, i) => {
       const a = (i / graph.nodes.length) * Math.PI * 2 + Math.random();
       const rad = 20 + Math.random() * 90;
-      return { ...n, x: W / 2 + Math.cos(a) * rad, y: H / 2 + Math.sin(a) * rad, vx: 0, vy: 0, r: 5 + Math.min(10, n.weight ?? 3) * 1.1 };
+      return { ...n, x: cx0 + Math.cos(a) * rad, y: cy0 + Math.sin(a) * rad, vx: 0, vy: 0, r: 5 + Math.min(10, n.weight ?? 3) * 1.1 };
     });
     const byId = new Map(nodes.map((n) => [n.id, n]));
     const edges = graph.edges.map((e) => ({ a: byId.get(e.source), b: byId.get(e.target) })).filter((e): e is { a: Sim; b: Sim } => !!e.a && !!e.b);
@@ -437,10 +471,10 @@ function Constellation({ graph }: { graph: Graph }) {
           else if (fNbrs?.has(n.id)) { fx += (cx - n.x) * 0.015; fy += (cy - n.y) * 0.015; }
           else { const dx = n.x - cx, dy = n.y - cy, d = Math.hypot(dx, dy) || 0.01; fx += (dx / d) * 1.6 + (cx - n.x) * 0.004; fy += (dy / d) * 1.6 + (cy - n.y) * 0.004; }
         } else {
-          fx += (cx - n.x) * 0.045 + (Math.random() - 0.5) * 0.2 * scale;
-          fy += (cy - n.y) * 0.045 + (Math.random() - 0.5) * 0.2 * scale;
+          fx += (cx - n.x) * 0.045 + (Math.random() - 0.5) * 0.55 * scale;
+          fy += (cy - n.y) * 0.045 + (Math.random() - 0.5) * 0.55 * scale;
         }
-        n.vx = (n.vx + fx) * 0.86; n.vy = (n.vy + fy) * 0.86;
+        n.vx = (n.vx + fx) * 0.88; n.vy = (n.vy + fy) * 0.88;
       }
       for (const { a, b } of edges) {
         const dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.01;
@@ -458,159 +492,251 @@ function Constellation({ graph }: { graph: Graph }) {
       }
     }
 
+    // ── Render helpers ────────────────────────────────────────────────────────
+
     function drawBackground(t: number) {
-      // Deep dark base
-      const bg = ctx.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, Math.max(W, H) * 0.7);
-      bg.addColorStop(0, "#14120f");
-      bg.addColorStop(1, "#0c0c10");
-      ctx.fillStyle = bg;
+      // Clear to transparent — canvas inherits the page's surface background
+      ctx.clearRect(0, 0, W, H);
+
+      // Very subtle warm amber haze at centre — just a soft accent, not a full nebula
+      const neb = ctx.createRadialGradient(W * 0.5, H * 0.48, 0, W * 0.5, H * 0.48, Math.min(W, H) * 0.5);
+      neb.addColorStop(0, "rgba(200,90,20,0.07)");
+      neb.addColorStop(0.5, "rgba(120,45,8,0.04)");
+      neb.addColorStop(1, "transparent");
+      ctx.fillStyle = neb;
       ctx.fillRect(0, 0, W, H);
 
-      // Subtle dot grid
-      const gs = 40;
-      ctx.fillStyle = GC.grid;
-      for (let x = gs / 2; x < W; x += gs) {
-        for (let y = gs / 2; y < H; y += gs) {
-          ctx.beginPath();
-          ctx.arc(x, y, 0.8, 0, Math.PI * 2);
-          ctx.fill();
+      // Subtle stars — lighter alpha so they're visible without dominating
+      for (const s of stars) {
+        const twinkle = Math.sin(t * s.speed + s.phase) * 0.2;
+        const alpha = Math.max(0.06, (s.baseAlpha * 0.45) + twinkle);
+        if (s.r > 0.9) {
+          const g = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 4);
+          g.addColorStop(0, s.warm ? `rgba(255,180,100,${alpha * 0.35})` : `rgba(220,210,200,${alpha * 0.25})`);
+          g.addColorStop(1, "transparent");
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 4, 0, Math.PI * 2); ctx.fill();
         }
+        ctx.globalAlpha = alpha * 0.7;
+        ctx.fillStyle = s.warm ? "#ffcf90" : "#e8e0d8";
+        ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2); ctx.fill();
       }
-
-      // Faint radial ring
-      const pulse = 0.03 + Math.sin(t * 0.0008) * 0.015;
-      ctx.strokeStyle = `rgba(255,125,60,${pulse})`;
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.arc(W / 2, H / 2, Math.min(W, H) * 0.38, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.globalAlpha = 1;
     }
 
     function drawEdge(a: Sim, b: Sim, active: boolean, hovered: string | null) {
-      const alpha = active ? 0.85 : hovered ? 0.1 : 0.45;
       if (active) {
-        // Glow pass
-        ctx.globalAlpha = 0.15;
+        ctx.globalAlpha = 0.12;
         ctx.strokeStyle = GC.edgeActive;
         ctx.lineWidth = 5;
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
-        // Sharp line
-        ctx.globalAlpha = 0.7;
+        ctx.globalAlpha = 0.65;
         ctx.strokeStyle = GC.edgeActive;
         ctx.lineWidth = 1;
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
       } else {
-        ctx.globalAlpha = alpha;
-        ctx.strokeStyle = GC.edgeFaint;
-        ctx.lineWidth = 0.7;
+        ctx.globalAlpha = hovered ? 0.08 : 0.22;
+        ctx.strokeStyle = GC.edgeIce;
+        ctx.lineWidth = 0.6;
+        ctx.setLineDash(hovered ? [] : []);
         ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        ctx.setLineDash([]);
       }
     }
 
     function drawNode(n: Sim, focused: boolean, isHovered: boolean, t: number) {
       const isPerson = n.type === "person";
       const color = isPerson ? GC.person : GC.topic;
-      const glowColor = isPerson ? GC.personGlow : GC.topicGlow;
-      const scale = scaleNow();
+      const dimAlpha = focused ? 1 : 0.18;
 
-      ctx.globalAlpha = focused ? 1 : 0.22;
+      // ── Outer diffuse glow (additive blend) ────────────────────────────────
+      ctx.globalCompositeOperation = "lighter";
+      const outerR = n.r * (isHovered ? 10 : 7);
+      const outer = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, outerR);
+      outer.addColorStop(0, hexRgba(color, focused ? (isPerson ? 0.09 : 0.13) : 0.03));
+      outer.addColorStop(1, "transparent");
+      ctx.fillStyle = outer;
+      ctx.beginPath(); ctx.arc(n.x, n.y, outerR, 0, Math.PI * 2); ctx.fill();
 
-      // Outer atmospheric glow
-      const aura = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 4);
-      aura.addColorStop(0, glowColor);
-      aura.addColorStop(1, "transparent");
-      ctx.fillStyle = aura;
-      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 4, 0, Math.PI * 2); ctx.fill();
+      // Mid glow
+      const mid = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r * 3.5);
+      mid.addColorStop(0, hexRgba(color, focused ? (isPerson ? 0.28 : 0.38) : 0.06));
+      mid.addColorStop(1, "transparent");
+      ctx.fillStyle = mid;
+      ctx.beginPath(); ctx.arc(n.x, n.y, n.r * 3.5, 0, Math.PI * 2); ctx.fill();
+      ctx.globalCompositeOperation = "source-over";
 
-      // Hover / selected pulse ring
-      if (isHovered || selectedRef.current === n.id) {
+      // ── Hover pulse ring ────────────────────────────────────────────────────
+      if (isHovered) {
         const pulse = 0.5 + Math.sin(t * 0.004) * 0.5;
-        ctx.globalAlpha = focused ? pulse * 0.5 : 0;
+        ctx.globalAlpha = dimAlpha * pulse * 0.55;
         ctx.strokeStyle = color;
-        ctx.lineWidth = 1.2;
-        ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 6 + pulse * 4, 0, Math.PI * 2); ctx.stroke();
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 7 + pulse * 5, 0, Math.PI * 2); ctx.stroke();
       }
 
-      ctx.globalAlpha = focused ? 1 : 0.25;
-
-      // Inner ring
-      ctx.strokeStyle = color;
-      ctx.globalAlpha = focused ? 0.2 : 0.06;
-      ctx.lineWidth = 0.8;
-      ctx.beginPath(); ctx.arc(n.x, n.y, n.r + 3 * scale, 0, Math.PI * 2); ctx.stroke();
-
-      // Core node
-      ctx.globalAlpha = focused ? 1 : 0.3;
-      ctx.shadowColor = color;
-      ctx.shadowBlur = isHovered ? 28 * scale : focused ? (isPerson ? 12 : 20) * scale : 0;
-      ctx.fillStyle = color;
+      // ── Core star: white centre → colour → fade ─────────────────────────────
+      ctx.globalAlpha = dimAlpha;
+      const core = ctx.createRadialGradient(n.x, n.y, 0, n.x, n.y, n.r);
+      core.addColorStop(0, "#ffffff");
+      core.addColorStop(0.28, color);
+      core.addColorStop(1, hexRgba(color, 0.55));
+      ctx.fillStyle = core;
       ctx.beginPath(); ctx.arc(n.x, n.y, n.r, 0, Math.PI * 2); ctx.fill();
-      ctx.shadowBlur = 0;
 
-      // Inner bright dot
-      ctx.globalAlpha = focused ? 0.9 : 0.2;
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath(); ctx.arc(n.x - n.r * 0.28, n.y - n.r * 0.28, n.r * 0.22, 0, Math.PI * 2); ctx.fill();
+      // ── Diffraction spikes on person nodes ──────────────────────────────────
+      if (isPerson && focused) {
+        const spike = n.r * (isHovered ? 8 : 5.5);
+        const spikeAlpha = isHovered ? 0.55 : 0.28;
+        // Horizontal
+        const hg = ctx.createLinearGradient(n.x - spike, n.y, n.x + spike, n.y);
+        hg.addColorStop(0, "transparent");
+        hg.addColorStop(0.5, hexRgba("#ffffff", spikeAlpha));
+        hg.addColorStop(1, "transparent");
+        ctx.globalAlpha = 1;
+        ctx.strokeStyle = hg; ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(n.x - spike, n.y); ctx.lineTo(n.x + spike, n.y); ctx.stroke();
+        // Vertical
+        const vg = ctx.createLinearGradient(n.x, n.y - spike, n.x, n.y + spike);
+        vg.addColorStop(0, "transparent");
+        vg.addColorStop(0.5, hexRgba("#ffffff", spikeAlpha));
+        vg.addColorStop(1, "transparent");
+        ctx.strokeStyle = vg;
+        ctx.beginPath(); ctx.moveTo(n.x, n.y - spike); ctx.lineTo(n.x, n.y + spike); ctx.stroke();
+      }
 
       ctx.globalAlpha = 1;
     }
 
     function drawLabel(n: Sim, focused: boolean, scale: number) {
-      const fontPx = Math.max(9, Math.round(11 * scale));
-      const maxLabel = scale < 0.72 ? 11 : 16;
-      const trim = (s: string) => s.length > maxLabel ? s.slice(0, maxLabel - 1).trimEnd() + "…" : s;
+      if (!focused) return;
+      const fontPx = Math.max(9, Math.round(10 * scale));
+      const label = n.label.length > 15 ? n.label.slice(0, 14).trimEnd() + "…" : n.label;
       const isPerson = n.type === "person";
+      const yOff = n.r + 9 * scale;
 
-      ctx.globalAlpha = focused ? 1 : 0.15;
       ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.font = `${isPerson ? 600 : 500} ${fontPx}px "Hanken Grotesk", sans-serif`;
+      ctx.textBaseline = "top";
+      ctx.font = `${isPerson ? 500 : 400} ${fontPx}px "Hanken Grotesk", sans-serif`;
+
+      // Dark backing for legibility against stars
+      const tw = ctx.measureText(label).width;
+      ctx.globalAlpha = 0.6;
+      ctx.fillStyle = "#000810";
+      ctx.fillRect(n.x - tw / 2 - 3, n.y + yOff - 1, tw + 6, fontPx + 3);
+
+      ctx.globalAlpha = 0.9;
       ctx.fillStyle = isPerson ? GC.person : "#ffa169";
-      ctx.fillText(trim(n.label), n.x, n.y + n.r + fontPx);
+      ctx.fillText(label, n.x, n.y + yOff);
       ctx.globalAlpha = 1;
     }
 
+    // ── Interaction state ─────────────────────────────────────────────────────
+    let mouseX: number | null = null, mouseY: number | null = null;
+    let dragId: string | null = null;
+    let dragPrevX = 0, dragPrevY = 0;
+
+    function nodeAt(clientX: number, clientY: number): string | null {
+      const rect = canvas!.getBoundingClientRect(), mx = clientX - rect.left, my = clientY - rect.top;
+      for (const n of nodes) { if ((mx - n.x) ** 2 + (my - n.y) ** 2 < (n.r + 14) ** 2) return n.id; }
+      return null;
+    }
+
+    // ── Render loop ───────────────────────────────────────────────────────────
     let raf = 0, ticks = 0;
     function loop(t: number) {
       step();
+
+      // Re-evaluate hover every frame so nodes drifting under a still cursor update correctly
+      if (mouseX !== null && mouseY !== null && !dragId) {
+        hoverRef.current = nodeAt(mouseX, mouseY);
+        canvas!.style.cursor = hoverRef.current ? "pointer" : "default";
+      }
+
       drawBackground(t);
 
       const hovered = selectedRef.current ?? hoverRef.current;
       const scale = scaleNow();
 
       for (const { a, b } of edges) {
-        const active = !!(hovered && (a.id === hovered || b.id === hovered));
-        drawEdge(a, b, active, hovered);
+        drawEdge(a, b, !!(hovered && (a.id === hovered || b.id === hovered)), hovered);
       }
       ctx.globalAlpha = 1;
 
       for (const n of nodes) {
         const focused = !hovered || n.id === hovered || !!(hovered && neighbours.get(hovered)?.has(n.id));
-        const isHovered = hoverRef.current === n.id || selectedRef.current === n.id;
-        drawNode(n, focused, isHovered, t);
+        drawNode(n, focused, hoverRef.current === n.id || selectedRef.current === n.id, t);
       }
-
       for (const n of nodes) {
         const focused = !hovered || n.id === hovered || !!(hovered && neighbours.get(hovered)?.has(n.id));
         drawLabel(n, focused, scale);
       }
 
       ticks++;
-      if (!(reduced && ticks > 120)) raf = requestAnimationFrame(loop);
+      raf = requestAnimationFrame(loop);
     }
     raf = requestAnimationFrame(loop);
 
-    function nodeAt(clientX: number, clientY: number): string | null {
-      const rect = canvas!.getBoundingClientRect(), mx = clientX - rect.left, my = clientY - rect.top;
-      for (const n of nodes) { if ((mx - n.x) ** 2 + (my - n.y) ** 2 < (n.r + 10) ** 2) return n.id; }
-      return null;
+    // ── Event handlers ────────────────────────────────────────────────────────
+    function onPointerDown(e: PointerEvent) {
+      const found = nodeAt(e.clientX, e.clientY);
+      if (found) {
+        dragId = found;
+        selectedRef.current = found;
+        hoverRef.current = found;
+        canvas!.setPointerCapture(e.pointerId);
+        canvas!.style.cursor = "grabbing";
+        const rect = canvas!.getBoundingClientRect();
+        dragPrevX = e.clientX - rect.left;
+        dragPrevY = e.clientY - rect.top;
+        e.preventDefault();
+      } else {
+        // Click on empty space deselects
+        selectedRef.current = null;
+      }
     }
-    function onMove(e: MouseEvent) { hoverRef.current = nodeAt(e.clientX, e.clientY); canvas!.style.cursor = hoverRef.current ? "pointer" : "default"; }
-    function onTap(e: PointerEvent) { const found = nodeAt(e.clientX, e.clientY); selectedRef.current = selectedRef.current === found ? null : found; }
-    canvas.addEventListener("mousemove", onMove);
-    canvas.addEventListener("pointerdown", onTap);
+
+    function onPointerMove(e: PointerEvent) {
+      mouseX = e.clientX; mouseY = e.clientY;
+      if (dragId) {
+        const rect = canvas!.getBoundingClientRect();
+        const nx = e.clientX - rect.left, ny = e.clientY - rect.top;
+        const node = byId.get(dragId);
+        if (node) {
+          node.vx = nx - dragPrevX;
+          node.vy = ny - dragPrevY;
+          node.x = nx; node.y = ny;
+          dragPrevX = nx; dragPrevY = ny;
+        }
+        canvas!.style.cursor = "grabbing";
+      }
+    }
+
+    function onPointerUp(e: PointerEvent) {
+      if (dragId) {
+        canvas!.releasePointerCapture(e.pointerId);
+        dragId = null;
+        canvas!.style.cursor = "default";
+      }
+    }
+
+    function onLeave() {
+      if (!dragId) { mouseX = null; mouseY = null; hoverRef.current = null; canvas!.style.cursor = "default"; }
+    }
+
+    canvas.addEventListener("pointerdown", onPointerDown);
+    canvas.addEventListener("pointermove", onPointerMove);
+    canvas.addEventListener("pointerup", onPointerUp);
+    canvas.addEventListener("pointerleave", onLeave);
     window.addEventListener("resize", resize);
-    return () => { cancelAnimationFrame(raf); canvas.removeEventListener("mousemove", onMove); canvas.removeEventListener("pointerdown", onTap); window.removeEventListener("resize", resize); };
+    return () => {
+      cancelAnimationFrame(raf); ro.disconnect();
+      canvas.removeEventListener("pointerdown", onPointerDown);
+      canvas.removeEventListener("pointermove", onPointerMove);
+      canvas.removeEventListener("pointerup", onPointerUp);
+      canvas.removeEventListener("pointerleave", onLeave);
+      window.removeEventListener("resize", resize);
+    };
   }, [graph]);
 
   return (
@@ -793,8 +919,8 @@ export default function Relationships() {
 
           {graphState === "ready" && graph && (
             <div className="rise">
-              <div className="overflow-hidden rounded-2xl border border-white/[0.06] p-1.5" style={{ background: "linear-gradient(145deg,#1c1a18,#0c0c10)" }}>
-                <div className="overflow-hidden rounded-[0.75rem]">
+              <div className="overflow-hidden rounded-2xl border border-line p-1 bg-surface-2">
+                <div className="overflow-hidden rounded-[0.7rem]">
                   <Constellation graph={graph} />
                 </div>
               </div>

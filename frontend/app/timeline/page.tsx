@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Shell, PageHeader, AccentButton, Thinking, StateNote, Arrow } from "../ui";
 import { API } from "../api";
+import { DotPattern } from "../components/dot-pattern";
 import { TracingBeam } from "../components/tracing-beam";
 import { AceternityTimeline } from "../components/aceternity-timeline";
 import { SentimentChart } from "../components/sentiment-chart";
@@ -184,6 +185,11 @@ export default function Timeline() {
   }));
 
   return (
+    <>
+      {/* Dot pattern — fixed so it stays behind all scrolling content */}
+      <div className="pointer-events-none fixed inset-0 z-0 text-accent/[0.18]">
+        <DotPattern width={20} height={20} cx={2} cy={2} cr={1.1} className="fill-current" />
+      </div>
     <Shell width="wide">
       <PageHeader
         kicker="Emotion Timeline"
@@ -247,5 +253,6 @@ export default function Timeline() {
         </div>
       )}
     </Shell>
+    </>
   );
 }

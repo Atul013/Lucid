@@ -4,6 +4,7 @@ import { useRef, useState, useEffect, useCallback, useId } from "react";
 import { motion } from "framer-motion";
 import { Shell, PageHeader, Reveal, GhostButton } from "../ui";
 import { API } from "../api";
+import { WorldMap } from "../components/world-map";
 
 const DOCS = "https://github.com/Atul013/Lucid/blob/development/docs/connect";
 const LUCID_WA = "919995265115";
@@ -525,6 +526,16 @@ export default function ConnectorsPage() {
     });
 
   return (
+    <>
+      <div aria-hidden className="pointer-events-none fixed inset-0 z-0 opacity-30">
+        <WorldMap dots={[
+          { start: { lat: 37.7749, lng: -122.4194 }, end: { lat: 51.5074, lng: -0.1278 } },
+          { start: { lat: 40.7128, lng: -74.006 },   end: { lat: 1.3521,  lng: 103.8198 } },
+          { start: { lat: 35.6762, lng: 139.6503 },  end: { lat: 48.8566, lng: 2.3522 } },
+          { start: { lat: 25.2048, lng: 55.2708 },   end: { lat: 28.6139, lng: 77.209 } },
+          { start: { lat: -33.8688, lng: 151.2093 }, end: { lat: 19.4326, lng: -99.1332 } },
+        ]} className="h-full" />
+      </div>
     <Shell>
       <PageHeader
         kicker="Data Sources"
@@ -751,6 +762,7 @@ export default function ConnectorsPage() {
 
       </Reveal>
     </Shell>
+    </>
   );
 }
 
