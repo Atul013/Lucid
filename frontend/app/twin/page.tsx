@@ -392,7 +392,7 @@ export default function Twin() {
           A small model of you, fit on your calendar load and your body&rsquo;s response to it.
         </p>
       </div>
-      <Shell width="wide">
+      <Shell width="wide" className="sm:pt-28 pt-2">
 
         {error && <StateNote>⚠ {error}</StateNote>}
 
