@@ -25,16 +25,20 @@ export function GlassRain({ active = true }: { active?: boolean }) {
     let raf: number;
     const drops: RainDrop[] = [];
 
-    function resize() {
-      canvas!.width = canvas!.offsetWidth;
-      canvas!.height = canvas!.offsetHeight;
-    }
+    // Arrow consts, not function declarations: declarations are hoisted, so TS
+    // can't see that the null-guards above already ran and treats `canvas`/`ctx`
+    // as possibly-null inside them. Arrows are created after the guards, which
+    // keeps the narrowing — and lets us drop the `!` assertions.
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
     resize();
 
-    const W = () => canvas!.width;
-    const H = () => canvas!.height;
+    const W = () => canvas.width;
+    const H = () => canvas.height;
 
-    function spawn(): RainDrop {
+    const spawn = (): RainDrop => {
       const r = 3 + Math.random() * 9;
       return {
         x: Math.random() * W(),
@@ -46,7 +50,7 @@ export function GlassRain({ active = true }: { active?: boolean }) {
         swayPhase: Math.random() * Math.PI * 2,
         trail: [],
       };
-    }
+    };
 
     // seed so the glass looks already wet
     for (let i = 0; i < 14; i++) {
@@ -57,7 +61,7 @@ export function GlassRain({ active = true }: { active?: boolean }) {
 
     let spawnTimer = 0;
 
-    function tick() {
+    const tick = () => {
       ctx.clearRect(0, 0, W(), H());
 
       spawnTimer++;
@@ -131,7 +135,7 @@ export function GlassRain({ active = true }: { active?: boolean }) {
       }
 
       raf = requestAnimationFrame(tick);
-    }
+    };
 
     tick();
 
