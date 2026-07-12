@@ -79,7 +79,7 @@
 | Malayalam/Manglish sentiment | ✅ Done | Am4l-babu | feature/malayalam-sentiment | Code-mixed lexicon engine + optional Indic transformer (PR #26) |
 | Digital Twin — simulation engine | ✅ Done | Am4l-babu | feature/twin-simulation | simulate_workload(): stress probability from calendar + health, what-if sliders + risk curves on /twin (PR #30 merged) |
 | Agent loop — safety hardening | ✅ Done | Am4l-babu | feature/agent-safety-hardening | Phase 2 gap the generic API-key middleware doesn't cover: per-run cooldown to protect the LLM/Azure budget, persistent append-only audit trail of agent actions (drafts/proposals/todos/Telegram sends), input bounds on /twin/simulate (PR #47 merged) |
-| Agent — output formatting | 👀 In Review | Am4l-babu | feature/agent-output-formatting-clean | finish()/send_telegram() now take (headline, bullets) instead of free text, mirroring Ego/Drift's structured pattern; /agent Wrap-up + Telegram action cards render headline+bullets (PR #52) |
+| Agent — output formatting | ✅ Done | Am4l-babu | feature/agent-output-formatting-clean | finish()/send_telegram() now take (headline, bullets) instead of free text, mirroring Ego/Drift's structured pattern; /agent Wrap-up + Telegram action cards render headline+bullets (PR #52 merged) |
 | Autonomous agent loop | ✅ Done | Am4l-babu | feature/agent-loop | Tool-use loop: investigates twin/calendar/health/archive → drafts, calendar proposals, todos, Telegram wrap-up; /agent UI (PR #32 merged); reliability fix in PR #34 |
 | SNN tripwire | ✅ Done | Am4l-babu | feature/snn-tripwire | Pure-Python LIF layer over 6 life-rhythm streams; /tripwire UI; wake=true launches the agent on fresh trips (PR #39 merged) |
 | Edge deployment (Pi Zero 2 W) | 📋 Todo | — | — | FastAPI + ChromaDB on Pi, low-RAM tuning |
@@ -158,6 +158,7 @@
 | 2026-07-12 | Am4l-babu | Opened PR #50 (twin x briefing) → development, then visually verified with Playwright and merged |
 | 2026-07-12 | Am4l-babu | Started agent output formatting — structure agent replies for /agent, Telegram, WhatsApp |
 | 2026-07-12 | Am4l-babu | Opened PR #52 (agent output formatting) → development. Caught an accidental direct commit to main before pushing, recovered via cherry-pick onto a clean branch — main unaffected |
+| 2026-07-12 | Am4l-babu | PR #52 merged — agent output formatting done |
 | 2026-07-02 | Am4l-babu | Opened PR #27 (calendar connector) → development |
 | 2026-07-02 | Am4l-babu | PRs #23, #25, #26, #27 merged — finance, health, sentiment, calendar done |
 | 2026-07-02 | Am4l-babu | Took over Telegram connector (Atul013 had it marked, no branch pushed) + connectors UI easy-connect rework + setup guides |
