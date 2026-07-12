@@ -24,6 +24,7 @@ from app.routers.todos import router as todos_router
 from app.routers.twin import router as twin_router
 from app.routers.agent import router as agent_router
 from app.routers.snn import router as snn_router
+from app.routers.privacy import router as privacy_router
 from app.connectors import telegram as telegram_connector
 from app.connectors import reminders
 from app import security
@@ -72,6 +73,7 @@ app.include_router(todos_router)
 app.include_router(twin_router)
 app.include_router(agent_router)
 app.include_router(snn_router)
+app.include_router(privacy_router)
 
 
 @app.get("/docs", include_in_schema=False)
