@@ -3,7 +3,7 @@
 One place that dumps or purges everything Lucid holds locally, now that
 every store shares a single access path (crypto_store) to hang this off —
 see PLAN.md Phase 3. Covers the archive collections (emails, transactions,
-health, events, messages), every derived-analysis cache (Ego, Drift,
+health, events, messages, notes), every derived-analysis cache (Ego, Drift,
 Relationships, Graph, Timeline, Briefing, SNN, agent report), the todo
 list, the agent's audit trail, and connector credentials (Gmail OAuth
 tokens, Telegram bot config, WhatsApp owner pairing).
@@ -21,7 +21,7 @@ from fastapi import APIRouter, Response
 from app import crypto_store
 from app.connectors import agent, chroma, gmail, snn, todos
 from app.connectors import telegram as telegram_connector
-from app.routers import briefing, drift, ego, graph, relationships, timeline
+from app.routers import briefing, drift, ego, graph, notes as notes_mod, relationships, timeline
 from app.routers import whatsapp as whatsapp_mod
 
 router = APIRouter(prefix="/privacy")
@@ -42,6 +42,7 @@ _JSON_STORES = {
     "gmail_tokens": gmail.TOKENS_FILE,
     "telegram_config": telegram_connector.CONFIG_FILE,
     "whatsapp_config": whatsapp_mod.CONFIG_FILE,
+    "notes_config": notes_mod.CONFIG_FILE,
 }
 
 
@@ -56,6 +57,7 @@ def export_data():
             "health": chroma.all_health(),
             "events": chroma.all_events(),
             "messages": chroma.all_messages(),
+            "notes": chroma.all_notes(),
         },
         **{name: crypto_store.read_json(path, None) for name, path in _JSON_STORES.items()},
         "agent_actions": crypto_store.read_lines(agent.ACTION_LOG_FILE),
@@ -83,6 +85,7 @@ def purge_data(confirm: bool = False):
     chroma.wipe_health()
     chroma.wipe_events()
     chroma.wipe_messages()
+    chroma.wipe_notes()
 
     for path in _JSON_STORES.values():
         path.unlink(missing_ok=True)

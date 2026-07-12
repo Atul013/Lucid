@@ -12,6 +12,8 @@ calendar_mock_db.json
 health_mock_db.json
 finance_mock_db.json
 messages_mock_db.json
+notes_mock_db.json
+notes_config.json
 telegram_config.json
 whatsapp_config.json
 todos.json
