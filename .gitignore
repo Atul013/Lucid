@@ -6,6 +6,7 @@ __pycache__/
 node_modules/
 .next/
 chroma_data/
+embedding_cache/
 chroma_mock_db.json
 calendar_mock_db.json
 health_mock_db.json

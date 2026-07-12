@@ -380,12 +380,36 @@ body::after {
   animation-iteration-count: infinite;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
+/* MagicUI Marquee */
+@keyframes marquee-x {
+  from { transform: translateX(0); }
+  to   { transform: translateX(calc(-100% - var(--gap))); }
+}
+@keyframes marquee-y {
+  from { transform: translateY(0); }
+  to   { transform: translateY(calc(-100% - var(--gap))); }
+}
+.animate-marquee          { animation: marquee-x var(--duration) linear infinite; }
+.animate-marquee-vertical { animation: marquee-y var(--duration) linear infinite; }
+
+/* Orbiting circles */
+@keyframes orbit {
+  0% {
+    transform: rotate(calc(var(--angle) * 1deg))
+               translateY(calc(var(--radius) * -1px))
+               rotate(calc(var(--angle) * -1deg));
+  }
+  100% {
+    transform: rotate(calc((var(--angle) + 360) * 1deg))
+               translateY(calc(var(--radius) * -1px))
+               rotate(calc((var(--angle) + 360) * -1deg));
   }
 }
+.animate-orbit {
+  width: var(--icon-size);
+  height: var(--icon-size);
+  animation: orbit calc(var(--duration) * 1s) linear infinite;
+}
+
+/* Decorative animations (.comet-streak, macbook scroll) must always run.
+   We intentionally do not suppress motion here — the product relies on it. */

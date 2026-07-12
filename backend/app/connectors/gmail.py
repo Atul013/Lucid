@@ -18,11 +18,11 @@ TOKENS_FILE = Path("tokens.json")
 
 CLIENT_CONFIG = {
     "web": {
-        "client_id": os.environ["GOOGLE_CLIENT_ID"],
-        "client_secret": os.environ["GOOGLE_CLIENT_SECRET"],
+        "client_id": os.environ.get("GOOGLE_CLIENT_ID", ""),
+        "client_secret": os.environ.get("GOOGLE_CLIENT_SECRET", ""),
         "auth_uri": "https://accounts.google.com/o/oauth2/auth",
         "token_uri": "https://oauth2.googleapis.com/token",
-        "redirect_uris": [os.environ["GOOGLE_REDIRECT_URI"]],
+        "redirect_uris": [os.environ.get("GOOGLE_REDIRECT_URI", "http://localhost:8000/auth/google/callback")],
     }
 }
 
