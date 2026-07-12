@@ -1,7 +1,7 @@
-import json
 from pathlib import Path
 from datetime import date
 from fastapi import APIRouter, HTTPException
+from app import crypto_store
 from app.connectors import agent, chroma, finance, llm, twin
 
 router = APIRouter()
@@ -21,7 +21,7 @@ SYSTEM = (
 
 
 def _read(path: Path) -> dict:
-    return json.loads(path.read_text(encoding="utf-8")) if path.exists() else {}
+    return crypto_store.read_json(path, {})
 
 
 def _twin_snapshot() -> dict | None:
@@ -67,9 +67,7 @@ def _finance_snapshot() -> dict | None:
 
 @router.get("/briefing")
 def get_briefing():
-    if CACHE.exists():
-        return json.loads(CACHE.read_text(encoding="utf-8"))
-    return {"generated": False}
+    return crypto_store.read_json(CACHE, {"generated": False})
 
 
 @router.post("/briefing/build")
@@ -122,5 +120,5 @@ def build_briefing():
         "agent": agent_snapshot,
         "finance": finance_snapshot,
     }
-    CACHE.write_text(json.dumps(result), encoding="utf-8")
+    crypto_store.write_json(CACHE, result)
     return result

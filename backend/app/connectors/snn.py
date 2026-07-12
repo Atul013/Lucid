@@ -13,13 +13,13 @@ Pure Python by design (per ROADMAP: prove the trigger before adopting
 Norse/torch) — the whole net is a few hundred floats, no new dependencies,
 and it will run unchanged on the Pi Zero.
 """
-import json
 import math
 import threading
 from datetime import date, datetime, timedelta, timezone
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 
+from app import crypto_store
 from app.connectors import chroma
 
 REPORT_FILE = Path("snn_report.json")
@@ -236,14 +236,9 @@ def scan(wake: bool = False) -> dict:
             "fresh_trips": fresh,
             "woke_agent": woke_agent,
         }
-        REPORT_FILE.write_text(json.dumps(report, indent=2), encoding="utf-8")
+        crypto_store.write_json(REPORT_FILE, report)
         return report
 
 
 def last_report() -> dict | None:
-    if REPORT_FILE.exists():
-        try:
-            return json.loads(REPORT_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            return None
-    return None
+    return crypto_store.read_json(REPORT_FILE, None)

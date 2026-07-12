@@ -1,5 +1,4 @@
 import os
-import json
 import hashlib
 import logging
 import secrets
@@ -8,6 +7,7 @@ from pathlib import Path
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from app import crypto_store
 from app.connectors import chroma, llm
 
 router = APIRouter()
@@ -31,16 +31,11 @@ PAIR_TTL = timedelta(minutes=5)
 
 
 def _read_config() -> dict:
-    if CONFIG_FILE.exists():
-        try:
-            return json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            return {}
-    return {}
+    return crypto_store.read_json(CONFIG_FILE, {})
 
 
 def _write_config(cfg: dict):
-    CONFIG_FILE.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+    crypto_store.write_json(CONFIG_FILE, cfg)
 
 
 def _is_chat_id(value: str) -> bool:

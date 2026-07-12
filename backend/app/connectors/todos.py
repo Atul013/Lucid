@@ -5,10 +5,11 @@ Items can carry a reminder (`remind_at`, ISO datetime) and delivery channels
 reminders.py fires them; browser notifications are handled by the web page.
 """
 
-import json
 import threading
 from datetime import datetime, timezone
 from pathlib import Path
+
+from app import crypto_store
 
 TODO_FILE = Path("todos.json")
 _LOCK = threading.Lock()
@@ -19,16 +20,11 @@ CHANNELS = ("telegram", "whatsapp", "email", "browser")
 
 
 def _read() -> dict:
-    if TODO_FILE.exists():
-        try:
-            return json.loads(TODO_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    return {"next_id": 1, "items": []}
+    return crypto_store.read_json(TODO_FILE, {"next_id": 1, "items": []})
 
 
 def _write(data: dict):
-    TODO_FILE.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    crypto_store.write_json(TODO_FILE, data)
 
 
 def all_todos() -> list[dict]:
