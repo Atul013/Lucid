@@ -1,7 +1,7 @@
 import os
 
-from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from fastapi import APIRouter, HTTPException, Response
+from pydantic import BaseModel, Field
 
 from app.connectors import agent
 
@@ -9,7 +9,7 @@ router = APIRouter(prefix="/agent")
 
 
 class RunBody(BaseModel):
-    goal: str | None = None
+    goal: str | None = Field(default=None, max_length=2000)
 
 
 @router.get("/status")
@@ -21,17 +21,25 @@ def status():
         "last_run": last["ran_at"] if last else None,
         "last_actions": len(last["actions"]) if last else 0,
         "steps_done": len(last["steps"]) if last else 0,
+        "cooldown_seconds_remaining": round(agent.seconds_until_next_run(), 1),
     }
 
 
 @router.post("/run")
-def run(body: RunBody):
+def run(body: RunBody, response: Response):
     """Start one agent run in the background: it investigates (twin,
     calendar, health, archive), then acts — drafts, calendar proposals,
     todos, Telegram wrap-up. Poll /agent/status; read /agent/report when
-    running goes false. Live LLM runs can take a few minutes."""
-    if not agent.run_async(body.goal):
-        raise HTTPException(status_code=409, detail="A run is already in progress.")
+    running goes false. Live LLM runs can take a few minutes.
+
+    Rate-limited to one run per AGENT_RUN_COOLDOWN_SECONDS (default 10 min)
+    to protect the LLM quota/budget from repeated triggering."""
+    try:
+        if not agent.run_async(body.goal):
+            raise HTTPException(status_code=409, detail="A run is already in progress.")
+    except agent.CooldownActive as e:
+        response.headers["Retry-After"] = str(int(e.retry_after) + 1)
+        raise HTTPException(status_code=429, detail=str(e)) from e
     return {"started": True}
 
 

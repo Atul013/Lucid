@@ -29,5 +29,6 @@ backend/whatsapp_service/.wwebjs_cache/
 # Local session notes (gitignored context file)
 SESSION_NOTES.md
 agent_report.json
+agent_actions.log
 snn_report.json
 backend/whatsapp_service/link-qr.png
