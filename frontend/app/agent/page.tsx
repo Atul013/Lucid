@@ -25,6 +25,8 @@ type Action = {
   event?: string;
   reason?: string;
   text?: string;
+  headline?: string;
+  bullets?: string[];
 };
 type Report = {
   ran_at: string;
@@ -33,6 +35,7 @@ type Report = {
   steps: Step[];
   actions: Action[];
   summary: string;
+  bullets?: string[];
 };
 
 const ACTION_META: Record<Action["type"], { label: string; icon: string }> = {
@@ -208,6 +211,21 @@ export default function Agent() {
                 </p>
               </div>
               <p className="text-[1.02rem] leading-relaxed text-ink">{report.summary}</p>
+              {report.bullets && report.bullets.length > 0 && (
+                <ul className="mt-4 flex flex-col gap-2">
+                  {report.bullets.map((b, i) => (
+                    <li
+                      key={i}
+                      className="flex gap-3 text-[0.92rem] leading-relaxed text-muted"
+                    >
+                      <span aria-hidden="true" className="mt-1 shrink-0 text-accent">
+                        ▸
+                      </span>
+                      <span>{b}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </Reveal>
           </div>
 
@@ -254,7 +272,32 @@ export default function Agent() {
                         <p className="text-[0.95rem] text-muted">{a.text}</p>
                       )}
                       {a.type === "telegram" && (
-                        <p className="text-[0.92rem] leading-relaxed text-muted">{a.text}</p>
+                        <>
+                          {a.headline && (
+                            <p className="text-[0.92rem] leading-relaxed text-ink">
+                              {a.headline}
+                            </p>
+                          )}
+                          {a.bullets && a.bullets.length > 0 ? (
+                            <ul className="mt-2 flex flex-col gap-1.5">
+                              {a.bullets.map((b, i) => (
+                                <li
+                                  key={i}
+                                  className="flex gap-2 text-[0.85rem] leading-relaxed text-muted"
+                                >
+                                  <span aria-hidden="true" className="shrink-0 text-accent">
+                                    ▸
+                                  </span>
+                                  <span>{b}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            !a.headline && (
+                              <p className="text-[0.92rem] leading-relaxed text-muted">{a.text}</p>
+                            )
+                          )}
+                        </>
                       )}
                     </div>
                   </div>
