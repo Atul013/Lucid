@@ -7,7 +7,15 @@ import { EncryptedText } from "../components/encrypted-text";
 import { API } from "../api";
 
 
-type Briefing = { generated?: boolean; date?: string; briefing?: string };
+type TwinSnapshot = { current_risk: number; current_level: string; days_trained: number };
+type AgentSnapshot = { ran_at?: string; summary: string; action_count: number };
+type Briefing = {
+  generated?: boolean;
+  date?: string;
+  briefing?: string;
+  twin?: TwinSnapshot | null;
+  agent?: AgentSnapshot | null;
+};
 
 function longDate(d?: string): string {
   if (!d) return "";
@@ -139,6 +147,37 @@ export default function Today() {
               </CardItem>
             </CardBody>
           </CardContainer>
+
+          {(data.twin || data.agent) && (
+            <div className="mt-8 grid gap-4 sm:grid-cols-2">
+              {data.twin && (
+                <div className="card rise p-6">
+                  <Kicker className="mb-3 text-accent">Stress forecast</Kicker>
+                  <p className="font-display text-2xl capitalize text-ink">
+                    {data.twin.current_level} risk
+                    <span className="ml-2 font-mono text-sm text-faint">
+                      {(data.twin.current_risk * 100).toFixed(0)}%
+                    </span>
+                  </p>
+                  <p className="mt-2 font-mono text-[0.66rem] uppercase tracking-[0.18em] text-faint">
+                    Trained on {data.twin.days_trained} days
+                  </p>
+                </div>
+              )}
+              {data.agent && (
+                <div className="card rise p-6">
+                  <Kicker className="mb-3 text-accent">Latest agent run</Kicker>
+                  <p className="text-[0.95rem] leading-relaxed text-muted">
+                    {data.agent.summary || "No summary yet."}
+                  </p>
+                  <p className="mt-2 font-mono text-[0.66rem] uppercase tracking-[0.18em] text-faint">
+                    {data.agent.action_count} action
+                    {data.agent.action_count === 1 ? "" : "s"}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
 
           <div className="mt-8 flex flex-wrap items-center gap-5">
             <button
