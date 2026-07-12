@@ -41,7 +41,7 @@
 |---|---|---|---|---|
 | WhatsApp (`whatsapp-web.js`) | 👀 In Review | Atul013 | feature/whatsapp-ingestion | PR #43 — **working end to end**: node bridge, pairing-code ownership, agent replies (todo commands + archive Q&A). Survived WhatsApp's LID migration (identity keyed on chat id, not phone number) |
 | Gmail | ✅ Done | Atul013 | feature/gmail-connector | Gmail API + Google OAuth + sync |
-| WhatsApp — reply formatting + context | 🔄 Ongoing | Am4l-babu | feature/whatsapp-reply-formatting | Bot replies are plain prose and stateless. Adding WhatsApp-native formatting (*bold*, line breaks) and short conversation context so follow-ups make sense. Picked since other ready items are blocked (Telegram history import needs api_id/api_hash; Telegram briefing delivery overlaps Atul013's Ongoing Morning Briefing; scheduled agent runs needs go-ahead) |
+| WhatsApp — reply formatting + context | 👀 In Review | Am4l-babu | feature/whatsapp-reply-formatting | ASK_SYSTEM now asks for WhatsApp-native markup (*bold*, _italic_) instead of plain prose, with a normalizer for stray markdown; short per-chat rolling window (last 6 Q&A turns) fed back so follow-ups resolve. New whatsapp_conversations.json store wired into /privacy export+purge — 70 pytest tests passing (PR #63) |
 | Real data over demo data | 📋 Todo | — | — | **Archive is mostly synthetic**: calendar (211 events) and health (91 records) are seeded mock; Telegram messages = 0. Purge the seed data, sync real Google Calendar, and run the Telegram history import (PR #42) so the AI layers reason over the user's actual life, not `evt_0000` |
 | Telegram — run the history import | 📋 Todo | — | — | PR #42 shipped `/telegram/history/*` (Telethon) but it has never been run — needs api_id/api_hash from my.telegram.org. Until then the archive holds zero Telegram messages |
 | Telegram | ✅ Done | Am4l-babu | feature/telegram-command-menu | Bot API connector + live bot (todo commands, reminders) + web todos page (PR #28); tappable command menu (PR #35 merged) |
@@ -204,3 +204,4 @@
 | 2026-07-12 | Am4l-babu | PR #58 merged — data export/right-to-delete done. Opened PR #60 (mock-mode search embeddings) → development |
 | 2026-07-12 | Am4l-babu | PR #60 merged (development→main cut also landed). Started WhatsApp reply formatting + conversation context |
 | 2026-07-12 | Atul013 | Deployment replanned: Oracle Always Free ARM replaces Azure (B1s too small for the WhatsApp bridge's Chromium) |
+| 2026-07-12 | Am4l-babu | Opened PR #63 (WhatsApp reply formatting + conversation context) → development |
