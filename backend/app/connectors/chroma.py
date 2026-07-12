@@ -1,6 +1,7 @@
 import os
-import json
 from pathlib import Path
+
+from app import crypto_store
 
 try:
     import chromadb
@@ -10,19 +11,15 @@ except ImportError:
 
 if MOCK_MODE:
     # A simple JSON-based fallback for environments (like Windows without C++ build tools)
-    # where compiling chromadb/chroma-hnswlib is not possible.
+    # where compiling chromadb/chroma-hnswlib is not possible. Encrypted at
+    # rest when LUCID_ENCRYPTION_KEY is set — see app/crypto_store.py.
     MOCK_FILE = Path("chroma_mock_db.json")
 
     def _read_db() -> list[dict]:
-        if MOCK_FILE.exists():
-            try:
-                return json.loads(MOCK_FILE.read_text(encoding="utf-8"))
-            except Exception:
-                return []
-        return []
+        return crypto_store.read_json(MOCK_FILE, [])
 
     def _write_db(data: list[dict]):
-        MOCK_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        crypto_store.write_json(MOCK_FILE, data)
 
     def ingest_emails(emails: list[dict]) -> int:
         if not emails:
@@ -80,18 +77,16 @@ if MOCK_MODE:
     def all_emails() -> list[dict]:
         return _read_db()
 
+    def wipe_emails():
+        MOCK_FILE.unlink(missing_ok=True)
+
     FINANCE_MOCK_FILE = Path("finance_mock_db.json")
 
     def _read_finance_db() -> list[dict]:
-        if FINANCE_MOCK_FILE.exists():
-            try:
-                return json.loads(FINANCE_MOCK_FILE.read_text(encoding="utf-8"))
-            except Exception:
-                return []
-        return []
+        return crypto_store.read_json(FINANCE_MOCK_FILE, [])
 
     def _write_finance_db(data: list[dict]):
-        FINANCE_MOCK_FILE.write_text(json.dumps(data, indent=2), encoding="utf-8")
+        crypto_store.write_json(FINANCE_MOCK_FILE, data)
 
     def ingest_transactions(txns: list[dict]) -> int:
         if not txns:
@@ -113,15 +108,13 @@ if MOCK_MODE:
     def all_transactions() -> list[dict]:
         return _read_finance_db()
 
+    def wipe_transactions():
+        FINANCE_MOCK_FILE.unlink(missing_ok=True)
+
     HEALTH_MOCK_FILE = Path("health_mock_db.json")
 
     def _read_health_db() -> list[dict]:
-        if HEALTH_MOCK_FILE.exists():
-            try:
-                return json.loads(HEALTH_MOCK_FILE.read_text(encoding="utf-8"))
-            except Exception:
-                return []
-        return []
+        return crypto_store.read_json(HEALTH_MOCK_FILE, [])
 
     def ingest_health(records: list[dict]) -> int:
         if not records:
@@ -129,10 +122,7 @@ if MOCK_MODE:
         by_id = {r["id"]: r for r in _read_health_db()}
         for r in records:
             by_id[r["id"]] = r
-        HEALTH_MOCK_FILE.write_text(
-            json.dumps(sorted(by_id.values(), key=lambda r: r["date"]), indent=2),
-            encoding="utf-8",
-        )
+        crypto_store.write_json(HEALTH_MOCK_FILE, sorted(by_id.values(), key=lambda r: r["date"]))
         return len(records)
 
     def search_health(query: str, n_results: int = 10) -> list[dict]:
@@ -151,15 +141,13 @@ if MOCK_MODE:
     def all_health() -> list[dict]:
         return _read_health_db()
 
+    def wipe_health():
+        HEALTH_MOCK_FILE.unlink(missing_ok=True)
+
     EVENTS_MOCK_FILE = Path("calendar_mock_db.json")
 
     def _read_events_db() -> list[dict]:
-        if EVENTS_MOCK_FILE.exists():
-            try:
-                return json.loads(EVENTS_MOCK_FILE.read_text(encoding="utf-8"))
-            except Exception:
-                return []
-        return []
+        return crypto_store.read_json(EVENTS_MOCK_FILE, [])
 
     def ingest_events(events: list[dict]) -> int:
         if not events:
@@ -167,10 +155,7 @@ if MOCK_MODE:
         by_id = {e["id"]: e for e in _read_events_db()}
         for e in events:
             by_id[e["id"]] = e
-        EVENTS_MOCK_FILE.write_text(
-            json.dumps(sorted(by_id.values(), key=lambda e: e["start"]), indent=2),
-            encoding="utf-8",
-        )
+        crypto_store.write_json(EVENTS_MOCK_FILE, sorted(by_id.values(), key=lambda e: e["start"]))
         return len(events)
 
     def search_events(query: str, n_results: int = 10) -> list[dict]:
@@ -189,15 +174,13 @@ if MOCK_MODE:
     def all_events() -> list[dict]:
         return _read_events_db()
 
+    def wipe_events():
+        EVENTS_MOCK_FILE.unlink(missing_ok=True)
+
     MESSAGES_MOCK_FILE = Path("messages_mock_db.json")
 
     def _read_messages_db() -> list[dict]:
-        if MESSAGES_MOCK_FILE.exists():
-            try:
-                return json.loads(MESSAGES_MOCK_FILE.read_text(encoding="utf-8"))
-            except Exception:
-                return []
-        return []
+        return crypto_store.read_json(MESSAGES_MOCK_FILE, [])
 
     def ingest_messages(messages: list[dict]) -> int:
         if not messages:
@@ -205,9 +188,8 @@ if MOCK_MODE:
         by_id = {m["id"]: m for m in _read_messages_db()}
         for m in messages:
             by_id[m["id"]] = m
-        MESSAGES_MOCK_FILE.write_text(
-            json.dumps(sorted(by_id.values(), key=lambda m: m.get("datetime", m["date"])), indent=2),
-            encoding="utf-8",
+        crypto_store.write_json(
+            MESSAGES_MOCK_FILE, sorted(by_id.values(), key=lambda m: m.get("datetime", m["date"]))
         )
         return len(messages)
 
@@ -227,8 +209,19 @@ if MOCK_MODE:
     def all_messages() -> list[dict]:
         return _read_messages_db()
 
+    def wipe_messages():
+        MESSAGES_MOCK_FILE.unlink(missing_ok=True)
+
 else:
     _CLIENT = chromadb.PersistentClient(path=os.getenv("CHROMA_PATH", "chroma_data"))
+
+    def _safe_delete_collection(name: str):
+        """Wipe a collection that may never have been created (nothing was
+        ever ingested into it) — delete_collection raises in that case."""
+        try:
+            _CLIENT.delete_collection(name)
+        except Exception:
+            pass
 
     def _collection():
         return _CLIENT.get_or_create_collection("emails")
@@ -273,6 +266,9 @@ else:
             for d, m in zip(data["documents"], data["metadatas"])
         ]
 
+    def wipe_emails():
+        _safe_delete_collection("emails")
+
     def _transactions():
         return _CLIENT.get_or_create_collection("transactions")
 
@@ -303,6 +299,9 @@ else:
         data = _transactions().get(include=["metadatas"])
         return list(data["metadatas"])
 
+    def wipe_transactions():
+        _safe_delete_collection("transactions")
+
     def _health_collection():
         return _CLIENT.get_or_create_collection("health")
 
@@ -330,6 +329,9 @@ else:
             {"id": i, "text": d, **m}
             for i, d, m in zip(data["ids"], data["documents"], data["metadatas"])
         ]
+
+    def wipe_health():
+        _safe_delete_collection("health")
 
     def _events_collection():
         return _CLIENT.get_or_create_collection("events")
@@ -359,6 +361,9 @@ else:
             for i, d, m in zip(data["ids"], data["documents"], data["metadatas"])
         ]
 
+    def wipe_events():
+        _safe_delete_collection("events")
+
     def _messages_collection():
         return _CLIENT.get_or_create_collection("messages")
 
@@ -386,3 +391,6 @@ else:
             {"id": i, "text": d, **m}
             for i, d, m in zip(data["ids"], data["documents"], data["metadatas"])
         ]
+
+    def wipe_messages():
+        _safe_delete_collection("messages")

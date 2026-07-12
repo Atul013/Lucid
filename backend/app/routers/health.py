@@ -1,6 +1,6 @@
-import json
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
+from app import crypto_store
 from app.connectors import chroma
 from app.connectors import health as health_connector
 
@@ -49,12 +49,13 @@ def correlation():
     records = chroma.all_health()
     if not records:
         raise HTTPException(status_code=400, detail="No health data — seed or upload first.")
-    if not TIMELINE_CACHE.exists():
+    timeline = crypto_store.read_json(TIMELINE_CACHE, None)
+    if timeline is None:
         raise HTTPException(
             status_code=400,
             detail="Emotion timeline not built yet — POST /ego/timeline/build first.",
         )
-    days = json.loads(TIMELINE_CACHE.read_text(encoding="utf-8")).get("days", [])
+    days = timeline.get("days", [])
     sentiment = {
         d["date"]: float(d["score"])
         for d in days

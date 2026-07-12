@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
+from app import crypto_store
 from app.connectors import chroma, llm
 
 router = APIRouter()
@@ -35,23 +36,19 @@ def _extract_json(s: str) -> dict:
 
 @router.get("/drift/goals")
 def get_goals():
-    if GOALS_FILE.exists():
-        return json.loads(GOALS_FILE.read_text(encoding="utf-8"))
-    return {"goals": []}
+    return crypto_store.read_json(GOALS_FILE, {"goals": []})
 
 
 @router.put("/drift/goals")
 def set_goals(body: Goals):
     cleaned = [g.strip() for g in body.goals if g.strip()]
-    GOALS_FILE.write_text(json.dumps({"goals": cleaned}), encoding="utf-8")
+    crypto_store.write_json(GOALS_FILE, {"goals": cleaned})
     return {"goals": cleaned}
 
 
 @router.post("/drift/check")
 def drift_check():
-    if not GOALS_FILE.exists():
-        raise HTTPException(status_code=400, detail="Set some goals first.")
-    goals = json.loads(GOALS_FILE.read_text(encoding="utf-8")).get("goals", [])
+    goals = crypto_store.read_json(GOALS_FILE, {"goals": []}).get("goals", [])
     if not goals:
         raise HTTPException(status_code=400, detail="Set some goals first.")
 

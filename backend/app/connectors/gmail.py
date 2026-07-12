@@ -1,16 +1,19 @@
 import os
-import json
 from pathlib import Path
 from google_auth_oauthlib.flow import Flow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 
+from app import crypto_store
+
 SCOPES = [
     "https://www.googleapis.com/auth/gmail.readonly",
     "https://www.googleapis.com/auth/gmail.send",
     "https://www.googleapis.com/auth/calendar.readonly",
 ]
+# Holds the OAuth refresh token — full read/send access to the connected
+# account. Encrypted at rest when LUCID_ENCRYPTION_KEY is set.
 TOKENS_FILE = Path("tokens.json")
 
 CLIENT_CONFIG = {
@@ -48,9 +51,9 @@ def is_connected() -> bool:
 
 
 def load_creds() -> Credentials | None:
-    if not TOKENS_FILE.exists():
+    data = crypto_store.read_json(TOKENS_FILE, None)
+    if data is None:
         return None
-    data = json.loads(TOKENS_FILE.read_text())
     creds = Credentials(
         token=data["token"],
         refresh_token=data["refresh_token"],
@@ -106,11 +109,11 @@ def send_to_self(subject: str, body: str):
 
 
 def _save_creds(creds: Credentials):
-    TOKENS_FILE.write_text(json.dumps({
+    crypto_store.write_json(TOKENS_FILE, {
         "token": creds.token,
         "refresh_token": creds.refresh_token,
         "token_uri": creds.token_uri,
         "client_id": creds.client_id,
         "client_secret": creds.client_secret,
         "scopes": creds.scopes,
-    }))
+    })

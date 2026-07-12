@@ -8,7 +8,6 @@ paste the token in the Connectors UI. See docs/connect/TELEGRAM_CONNECT.md.
 """
 
 import hashlib
-import json
 import threading
 import time
 from datetime import datetime, timezone
@@ -16,24 +15,24 @@ from pathlib import Path
 
 import requests
 
+from app import crypto_store
+
 API_BASE = "https://api.telegram.org"
-CONFIG_FILE = Path("telegram_config.json")  # gitignored — holds the bot token
+# gitignored — holds the bot token and, once telegram_history.py is used, a
+# full-account MTProto session string. Encrypted at rest when
+# LUCID_ENCRYPTION_KEY is set — see app/crypto_store.py.
+CONFIG_FILE = Path("telegram_config.json")
 REQUEST_TIMEOUT = 15
 
 
 # ── config ───────────────────────────────────────────────────────────────────
 
 def _read_config() -> dict:
-    if CONFIG_FILE.exists():
-        try:
-            return json.loads(CONFIG_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            return {}
-    return {}
+    return crypto_store.read_json(CONFIG_FILE, {})
 
 
 def _write_config(cfg: dict):
-    CONFIG_FILE.write_text(json.dumps(cfg, indent=2), encoding="utf-8")
+    crypto_store.write_json(CONFIG_FILE, cfg)
 
 
 def is_connected() -> bool:
@@ -128,8 +127,18 @@ def _normalize(msg: dict) -> dict | None:
 
 
 def fetch_updates() -> list[dict]:
-    """getUpdates since the last sync; remembers the chat_id of the most
-    recent private chat so send_message works without manual setup."""
+    """getUpdates since the last sync. The first private message ever
+    received claims chat_id as the owner (so send_message works without
+    manual setup) — after that, only messages from that same chat_id are
+    archived. A bot's username is discoverable, so without this any
+    stranger who DMs the bot before the real owner does could otherwise
+    claim ownership, or later inject arbitrary text into the owner's
+    archive (which feeds Ego/Drift/Twin/the agent).
+
+    The claim only ever happens from a private chat — if the bot is also
+    added to a group, that group must never be able to seize ownership
+    before the real owner's first DM (a group's members are, definitionally,
+    not just the owner)."""
     cfg = _read_config()
     token = cfg.get("bot_token")
     if not token:
@@ -143,12 +152,15 @@ def fetch_updates() -> list[dict]:
     messages = []
     for u in updates:
         cfg["last_update_id"] = u["update_id"]
-        record = _normalize(u.get("message") or {})
-        if record:
-            messages.append(record)
-            if (u.get("message", {}).get("chat", {}).get("type") == "private"
-                    and not cfg.get("chat_id_manual")):
-                cfg["chat_id"] = record["chat_id"]
+        msg = u.get("message") or {}
+        record = _normalize(msg)
+        if not record:
+            continue
+        if not cfg.get("chat_id") and msg.get("chat", {}).get("type") == "private":
+            cfg["chat_id"] = record["chat_id"]
+        if record["chat_id"] != cfg.get("chat_id"):
+            continue  # not the owner's chat — do not archive
+        messages.append(record)
 
     cfg["last_sync"] = datetime.now(timezone.utc).isoformat()
     cfg["synced_messages"] = cfg.get("synced_messages", 0) + len(messages)
@@ -265,8 +277,21 @@ def _process_update(u: dict, cfg: dict) -> None:
     record = _normalize(msg)
     if not record:
         return
-    if msg.get("chat", {}).get("type") == "private" and not cfg.get("chat_id_manual"):
+    # First-ever private message claims chat_id as the owner. After that,
+    # only the owner's chat gets commands executed or text archived — a
+    # bot's username is discoverable, so without this any stranger who
+    # finds/DMs the bot could run /del, /add etc. on the real owner's todo
+    # list, or seed the owner's Ego/Drift/Twin-feeding archive with their
+    # own text. Gated to private chats so a group the bot is added to can
+    # never seize ownership ahead of the real owner's first DM.
+    if not cfg.get("chat_id") and msg.get("chat", {}).get("type") == "private":
         cfg["chat_id"] = record["chat_id"]
+    if record["chat_id"] != cfg.get("chat_id"):
+        try:
+            _call("sendMessage", cfg["bot_token"], chat_id=record["chat_id"], text="This bot is private.")
+        except ValueError:
+            pass
+        return
 
     text = record["text"]
     if text.startswith("/"):

@@ -2,6 +2,7 @@ import json
 import re
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
+from app import crypto_store
 from app.connectors import chroma, llm
 
 router = APIRouter()
@@ -42,9 +43,7 @@ def _validate(graph: dict) -> dict:
 
 @router.get("/graph")
 def get_graph():
-    if CACHE.exists():
-        return json.loads(CACHE.read_text(encoding="utf-8"))
-    return {"generated": False, "nodes": [], "edges": []}
+    return crypto_store.read_json(CACHE, {"generated": False, "nodes": [], "edges": []})
 
 
 @router.post("/graph/build")
@@ -68,5 +67,5 @@ def build_graph():
         raise HTTPException(status_code=502, detail="Could not build graph — try again.")
 
     result = {"generated": True, **graph}
-    CACHE.write_text(json.dumps(result), encoding="utf-8")
+    crypto_store.write_json(CACHE, result)
     return result
