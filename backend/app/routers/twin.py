@@ -1,14 +1,16 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.connectors import chroma, twin
 
 router = APIRouter(prefix="/twin")
 
-
+# A week only has 168 hours and a night only has so many; bounding the
+# what-if inputs keeps the model fed sane numbers instead of extrapolating
+# on nonsense (the model has no internal bound on its inputs).
 class SimulateBody(BaseModel):
-    extra_meeting_hours: float = 0.0
-    sleep_delta_hours: float = 0.0
+    extra_meeting_hours: float = Field(default=0.0, ge=-80.0, le=80.0)
+    sleep_delta_hours: float = Field(default=0.0, ge=-12.0, le=12.0)
 
 
 @router.get("/status")
