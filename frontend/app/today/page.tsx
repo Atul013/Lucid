@@ -9,12 +9,18 @@ import { API } from "../api";
 
 type TwinSnapshot = { current_risk: number; current_level: string; days_trained: number };
 type AgentSnapshot = { ran_at?: string; summary: string; action_count: number };
+type FinanceSnapshot = {
+  subscriptions_monthly_cost: number;
+  subscription_count: number;
+  forecast_next_month_net: number;
+};
 type Briefing = {
   generated?: boolean;
   date?: string;
   briefing?: string;
   twin?: TwinSnapshot | null;
   agent?: AgentSnapshot | null;
+  finance?: FinanceSnapshot | null;
 };
 
 function longDate(d?: string): string {
@@ -148,7 +154,7 @@ export default function Today() {
             </CardBody>
           </CardContainer>
 
-          {(data.twin || data.agent) && (
+          {(data.twin || data.agent || data.finance) && (
             <div className="mt-8 grid gap-4 sm:grid-cols-2">
               {data.twin && (
                 <div className="card rise p-6">
@@ -173,6 +179,23 @@ export default function Today() {
                   <p className="mt-2 font-mono text-[0.66rem] uppercase tracking-[0.18em] text-faint">
                     {data.agent.action_count} action
                     {data.agent.action_count === 1 ? "" : "s"}
+                  </p>
+                </div>
+              )}
+              {data.finance && (
+                <div className="card rise p-6">
+                  <Kicker className="mb-3 text-accent">Budget</Kicker>
+                  <p className="font-display text-2xl text-ink">
+                    {data.finance.subscription_count} subscription
+                    {data.finance.subscription_count === 1 ? "" : "s"}
+                    <span className="ml-2 font-mono text-sm text-faint">
+                      ${data.finance.subscriptions_monthly_cost}/mo
+                    </span>
+                  </p>
+                  <p className="mt-2 font-mono text-[0.66rem] uppercase tracking-[0.18em] text-faint">
+                    Next month forecast:{" "}
+                    {data.finance.forecast_next_month_net >= 0 ? "+" : "−"}$
+                    {Math.abs(data.finance.forecast_next_month_net)} net
                   </p>
                 </div>
               )}
