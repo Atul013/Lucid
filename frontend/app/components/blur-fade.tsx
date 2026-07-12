@@ -23,7 +23,7 @@ export function BlurFade({
   blur = "8px",
 }: BlurFadeProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-40px" as Parameters<typeof useInView>[1]["margin"] });
+  const isInView = useInView(ref, { once: true, margin: "-40px" });
 
   const axis = direction === "up" || direction === "down" ? "y" : "x";
   const sign = direction === "down" || direction === "right" ? -1 : 1;

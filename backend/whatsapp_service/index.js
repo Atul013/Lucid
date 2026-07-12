@@ -65,6 +65,52 @@ client.on("disconnected", (reason) => {
   client.initialize();
 });
 
+client.on("auth_failure", (msg) => {
+  // The stored session was rejected. Next boot will show a QR, so say so loudly
+  // rather than letting the bridge look "up" while silently receiving nothing.
+  console.error("[Lucid WA] AUTH FAILURE:", msg);
+  console.error("[Lucid WA] The saved session is no longer valid — a re-scan is needed.");
+});
+
+// ── Graceful shutdown ────────────────────────────────────────────────────────
+// This is load-bearing, not politeness. The WhatsApp session lives inside a
+// Chromium profile backed by LevelDB, which buffers writes and holds lock files.
+// Killing the process without letting Chromium close leaves that profile
+// structurally corrupt — and a corrupt profile is indistinguishable from no
+// session at all, so the bridge comes back demanding a QR scan.
+//
+// Node's default SIGTERM behaviour is to exit immediately, which means even a
+// routine `systemctl restart` could unlink the account. Destroy the client
+// first so Chromium flushes and releases its locks.
+
+let shuttingDown = false;
+
+async function shutdown(signal) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[Lucid WA] ${signal} — closing WhatsApp session cleanly...`);
+
+  // Never hang forever: if Chromium wedges, exit anyway rather than letting
+  // systemd escalate to SIGKILL, which is the very thing we're avoiding.
+  const bail = setTimeout(() => {
+    console.warn("[Lucid WA] Shutdown timed out — exiting anyway.");
+    process.exit(1);
+  }, 15000);
+
+  try {
+    await client.destroy();
+    console.log("[Lucid WA] Session closed cleanly ✓");
+  } catch (err) {
+    console.error("[Lucid WA] Error during shutdown:", err.message);
+  } finally {
+    clearTimeout(bail);
+    process.exit(0);
+  }
+}
+
+process.on("SIGTERM", () => shutdown("SIGTERM")); // systemctl stop/restart
+process.on("SIGINT", () => shutdown("SIGINT"));   // Ctrl+C
+
 // Incoming message → forward to FastAPI for archiving
 client.on("message", async (msg) => {
   if (msg.fromMe) return; // ignore echoes of our own sends

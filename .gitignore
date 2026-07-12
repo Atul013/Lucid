@@ -14,6 +14,7 @@ finance_mock_db.json
 messages_mock_db.json
 telegram_config.json
 whatsapp_config.json
+whatsapp_conversations.json
 todos.json
 tokens.json
 ego_insights.json

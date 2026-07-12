@@ -1,4 +1,5 @@
 import os
+import re
 import hashlib
 import logging
 import secrets
@@ -21,8 +22,14 @@ ASK_SYSTEM = (
     "You are Lucid, a personal archive assistant answering over WhatsApp. "
     "Answer using ONLY the excerpts provided. Be concise — this is a chat "
     "message, so keep it to a few sentences. If the excerpts don't contain "
-    "the answer, say so plainly; do not invent details. Plain text only: no "
-    "markdown, asterisks, headers, or bullet symbols."
+    "the answer, say so plainly; do not invent details. If a recent "
+    "conversation is included, use it to resolve follow-ups like 'what "
+    "about the second one' or 'and last week?' — but still answer only from "
+    "the excerpts, not from memory of your own past answers. "
+    "Use WhatsApp's own formatting, not markdown: *single asterisks* for "
+    "bold, _underscores_ for italics, blank lines between paragraphs. No "
+    "markdown headers (#), no double-asterisk bold, no bullet or numbered "
+    "list symbols — write short paragraphs instead."
 )
 
 
@@ -36,6 +43,47 @@ def _read_config() -> dict:
 
 def _write_config(cfg: dict):
     crypto_store.write_json(CONFIG_FILE, cfg)
+
+
+# ── conversation memory: short per-chat Q&A history for follow-ups ──────────
+# The archive collection has every message ever sent, but nothing about what
+# *Lucid itself* answered — without that, "what about the second one?" has no
+# referent. This keeps a small rolling window per chat, just enough for a
+# follow-up to resolve, not a full transcript.
+
+CONVERSATIONS_FILE = Path("whatsapp_conversations.json")  # gitignored — recent Q&A per chat
+MAX_TURNS = 6
+
+
+def _read_conversations() -> dict:
+    return crypto_store.read_json(CONVERSATIONS_FILE, {})
+
+
+def _write_conversations(data: dict):
+    crypto_store.write_json(CONVERSATIONS_FILE, data)
+
+
+def _recent_turns(chat_id: str) -> list[dict]:
+    return _read_conversations().get(chat_id, [])
+
+
+def _remember_turn(chat_id: str, question: str, answer: str):
+    convos = _read_conversations()
+    turns = convos.get(chat_id, [])
+    turns.append({"q": question, "a": answer, "at": datetime.now(timezone.utc).isoformat()})
+    convos[chat_id] = turns[-MAX_TURNS:]
+    _write_conversations(convos)
+
+
+def _to_whatsapp_format(text: str) -> str:
+    """Normalize stray markdown into WhatsApp's own lightweight markup, in
+    case the model reverts to it despite the system prompt — WhatsApp bolds
+    with a single *asterisk*, not **two**, and has no real header/bullet
+    styling of its own; those just render as literal characters."""
+    text = re.sub(r"\*\*(.+?)\*\*", r"*\1*", text)  # **bold** -> *bold*
+    text = re.sub(r"(?m)^#{1,6}\s*", "", text)  # strip markdown headers
+    text = re.sub(r"(?m)^[•\*]\s+", "- ", text)  # normalize bullets to "- "
+    return text.strip()
 
 
 def _is_chat_id(value: str) -> bool:
@@ -186,9 +234,13 @@ async def _send_wa(target: str, message: str):
         log.warning("WA reply to %s failed: %s", target, e)
 
 
-def _answer_from_archive(question: str) -> str:
+def _answer_from_archive(chat_id: str, question: str) -> str:
     """Answer a question over the chat archive + email, like /archive/ask does
-    but across messages too — WhatsApp questions are usually about conversations."""
+    but across messages too — WhatsApp questions are usually about conversations.
+
+    Includes the last few Q&A turns for this chat so a bare follow-up
+    ("what about last week?") resolves against what was just asked, not just
+    the archive search for that fragment alone."""
     hits = chroma.search_messages(question, n_results=5) + chroma.search_emails(question, n_results=3)
     if not hits:
         return "Your archive is empty — connect a source and sync first."
@@ -197,13 +249,23 @@ def _answer_from_archive(question: str) -> str:
         f"From: {h.get('from', '?')}\nDate: {h.get('date', '?')}\n{h.get('text', '')}"
         for h in hits
     )
-    return llm.chat(
-        [
-            {"role": "system", "content": ASK_SYSTEM},
-            {"role": "user", "content": f"Excerpts:\n\n{context}\n\nQuestion: {question}"},
-        ],
-        max_tokens=300,
+    user_content = f"Excerpts:\n\n{context}\n\nQuestion: {question}"
+    recent = _recent_turns(chat_id)
+    if recent:
+        history = "\n".join(f"You: {t['q']}\nLucid: {t['a']}" for t in recent[-3:])
+        user_content = f"Recent conversation:\n{history}\n\n{user_content}"
+
+    answer = _to_whatsapp_format(
+        llm.chat(
+            [
+                {"role": "system", "content": ASK_SYSTEM},
+                {"role": "user", "content": user_content},
+            ],
+            max_tokens=300,
+        )
     )
+    _remember_turn(chat_id, question, answer)
+    return answer
 
 
 class OutboundMessage(BaseModel):
@@ -282,7 +344,7 @@ async def ingest_message(raw: dict):
 
     # A question is a request, not a diary entry — answer it from the archive.
     if text.endswith("?"):
-        await _send_wa(chat_id, _answer_from_archive(text))
+        await _send_wa(chat_id, _answer_from_archive(chat_id, text))
         return {"ok": True, "ingested": ingested, "handled": "question"}
 
     await _send_wa(chat_id, "Saved to your archive. 📥  (/help for commands)")

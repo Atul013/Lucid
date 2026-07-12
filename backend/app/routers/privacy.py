@@ -42,6 +42,7 @@ _JSON_STORES = {
     "gmail_tokens": gmail.TOKENS_FILE,
     "telegram_config": telegram_connector.CONFIG_FILE,
     "whatsapp_config": whatsapp_mod.CONFIG_FILE,
+    "whatsapp_conversations": whatsapp_mod.CONVERSATIONS_FILE,
 }
 
 
