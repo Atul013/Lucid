@@ -385,11 +385,11 @@ function ResultCard({ item, index, onStreamDone }: { item: Align; index: number;
             {/* Scan line while streaming */}
             <AnimatePresence>
               {!textDone && (
-                <motion.div aria-hidden exit={{ opacity: 0 }} transition={{ duration: 0.5 }}
+                <motion.div aria-hidden exit={{ opacity: 0 }}
                   className="pointer-events-none absolute left-0 right-0 h-[1px]"
                   style={{ background: `linear-gradient(90deg, transparent, ${cfg.color}55, transparent)` }}
                   animate={{ top: ["0%", "100%"] }}
-                  transition={{ repeat: Infinity, duration: 1.6, ease: "linear" }}
+                  transition={{ top: { repeat: Infinity, duration: 1.6, ease: "linear" }, opacity: { duration: 0.5 } }}
                 />
               )}
             </AnimatePresence>
