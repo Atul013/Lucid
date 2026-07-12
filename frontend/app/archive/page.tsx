@@ -235,11 +235,8 @@ export default function Archive() {
           {conn === "connected" && (
             <div className="flex flex-col gap-3">
 
-              {/* ── Row 1: Search + Status (2fr / 1fr) ── */}
-              <div
-                className="grid gap-3"
-                style={{ gridTemplateColumns: "2fr 1fr" }}
-              >
+              {/* ── Row 1: Search + Status (2fr / 1fr on desktop, stack on mobile) ── */}
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-[2fr_1fr]">
                 {/* Search card */}
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -518,18 +515,11 @@ function SourceBento({ sources }: { sources: Result[] }) {
       ref={gridRef}
       onMouseMove={onGridMove}
       onMouseLeave={onGridLeave}
-      className="grid gap-3"
+      className={`grid gap-3 ${useBento ? "max-sm:grid-cols-1 sm:grid-cols-3 sm:[grid-template-rows:repeat(3,minmax(108px,auto))]" : "max-sm:grid-cols-1 sm:grid-cols-3"}`}
       style={
-        useBento
-          ? {
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gridTemplateRows: "repeat(3, minmax(108px, auto))",
-            }
-          : {
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gridAutoRows: "minmax(108px, auto)",
-              gridAutoFlow: "dense",
-            }
+        !useBento
+          ? { gridAutoRows: "minmax(108px, auto)", gridAutoFlow: "dense" }
+          : undefined
       }
     >
       {sources.map((r, i) => {
@@ -542,6 +532,7 @@ function SourceBento({ sources }: { sources: Result[] }) {
         return (
           <motion.div
             key={i}
+            className="bento-cell"
             style={{ gridColumn: slot.col, gridRow: slot.row }}
             variants={{
               hidden: { clipPath: "polygon(0 0, 0 0, 0 100%, 0 100%)", opacity: 0 },
@@ -843,10 +834,7 @@ function LoadingSkeleton({ mode }: { mode: Mode }) {
         {mode === "ask" ? "Searching sources…" : "Finding matches…"}
       </p>
       {/* Skeleton bento */}
-      <div
-        className="grid gap-3"
-        style={{ gridTemplateColumns: "repeat(3, 1fr)" }}
-      >
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {[0, 1, 2, 3].map((i) => {
           const span = i % 4 === 0 ? "2" : i % 4 === 1 ? "1" : i % 4 === 2 ? "1" : "2";
           return (

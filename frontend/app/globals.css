@@ -408,8 +408,16 @@ body::after {
 .animate-orbit {
   width: var(--icon-size);
   height: var(--icon-size);
-  animation: orbit calc(var(--duration) * 1s) linear infinite;
+  animation: orbit calc(var(--duration) * 1s) linear infinite !important;
 }
 
-/* Decorative animations (.comet-streak, macbook scroll) must always run.
-   We intentionally do not suppress motion here — the product relies on it. */
+/* Decorative animations must always run — the product relies on them.
+   Override the Tailwind preflight reduced-motion kill. */
+
+/* On mobile, bento grid collapses to single column — clear explicit slots */
+@media (max-width: 639px) {
+  .bento-cell {
+    grid-column: auto !important;
+    grid-row: auto !important;
+  }
+}

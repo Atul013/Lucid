@@ -376,7 +376,22 @@ export default function Twin() {
 
   return (
     <>
-      <HeroParallax cards={parallaxCards} header={parallaxHeader} />
+      {/* HeroParallax is mouse-driven and too heavy on phone — desktop only */}
+      <div className="hidden sm:block">
+        <HeroParallax cards={parallaxCards} header={parallaxHeader} />
+      </div>
+      {/* Mobile header fallback */}
+      <div className="px-6 pb-6 pt-20 sm:hidden">
+        <p className="mb-1.5 font-mono text-[0.6rem] uppercase tracking-[0.24em] text-accent">
+          Digital Twin
+        </p>
+        <h1 className="font-display text-4xl font-medium leading-tight tracking-tight text-ink">
+          Your twin
+        </h1>
+        <p className="mt-4 max-w-xl text-[1rem] leading-relaxed text-muted">
+          A small model of you, fit on your calendar load and your body&rsquo;s response to it.
+        </p>
+      </div>
       <Shell width="wide">
 
         {error && <StateNote>⚠ {error}</StateNote>}

@@ -164,9 +164,9 @@ export default function Agent() {
         />
       )}
 
-      {/* ── 3D Pin capability cards — always visible ── */}
+      {/* ── 3D Pin capability cards — desktop only (too heavy on mobile) ── */}
       {!running && loaded && (
-        <div className="mb-4">
+        <div className="mb-4 hidden sm:block">
           <p className="kicker mb-8 text-faint">What the agent does</p>
           <div className="grid gap-6 sm:grid-cols-3">
             {FEATURE_CARDS.map((card) => (

@@ -37,7 +37,7 @@ export default function Nav() {
         <span className="h-5 w-px shrink-0 bg-line-2" aria-hidden="true" />
 
         {/* min-w-0 lets this scroll on mobile instead of widening the page */}
-        <div className="flex min-w-0 items-center gap-0.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <div className="flex min-w-0 items-center gap-0 sm:gap-0.5 overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {LINKS.map((l) => {
             const active = pathname === l.href || (l.href !== "/" && pathname.startsWith(l.href));
             return (
@@ -45,7 +45,7 @@ export default function Nav() {
                 key={l.href}
                 href={l.href}
                 aria-current={active ? "page" : undefined}
-                className={`relative shrink-0 whitespace-nowrap rounded-full px-3.5 py-2 font-mono text-[0.64rem] uppercase tracking-[0.2em] transition-colors duration-300 ${
+                className={`relative shrink-0 whitespace-nowrap rounded-full px-2.5 py-1.5 font-mono text-[0.56rem] uppercase tracking-[0.16em] transition-colors duration-300 sm:px-3.5 sm:py-2 sm:text-[0.64rem] sm:tracking-[0.2em] ${
                   active ? "text-ink" : "text-faint hover:text-muted"
                 }`}
               >
