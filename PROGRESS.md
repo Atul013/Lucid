@@ -78,6 +78,7 @@
 |---|---|---|---|---|
 | Malayalam/Manglish sentiment | ✅ Done | Am4l-babu | feature/malayalam-sentiment | Code-mixed lexicon engine + optional Indic transformer (PR #26) |
 | Digital Twin — simulation engine | ✅ Done | Am4l-babu | feature/twin-simulation | simulate_workload(): stress probability from calendar + health, what-if sliders + risk curves on /twin (PR #30 merged) |
+| Agent loop — safety hardening | 🔄 Ongoing | Am4l-babu | feature/agent-safety-hardening | Phase 2 gap the generic API-key middleware doesn't cover: per-run cooldown to protect the LLM/Azure budget, persistent append-only audit trail of agent actions (drafts/proposals/todos/Telegram sends), input bounds on /twin/simulate |
 | Agent — output formatting | 📋 Todo | — | — | Agent replies are an unstructured wall of prose in Telegram/WhatsApp and on /agent. Needs visual structure (headings, bullets, numbers set apart) |
 | Autonomous agent loop | ✅ Done | Am4l-babu | feature/agent-loop | Tool-use loop: investigates twin/calendar/health/archive → drafts, calendar proposals, todos, Telegram wrap-up; /agent UI (PR #32 merged); reliability fix in PR #34 |
 | SNN tripwire | ✅ Done | Am4l-babu | feature/snn-tripwire | Pure-Python LIF layer over 6 life-rhythm streams; /tripwire UI; wake=true launches the agent on fresh trips (PR #39 merged) |
@@ -142,6 +143,8 @@
 | 2026-07-02 | Am4l-babu | Started Google Calendar connector |
 | 2026-07-11 | Am4l-babu | Started security hardening (API key auth + rate limiting) |
 | 2026-07-11 | Am4l-babu | Opened PR #44 (security hardening) → development |
+| 2026-07-12 | Am4l-babu | PR #44 merged — security hardening done |
+| 2026-07-12 | Am4l-babu | Started agent loop safety hardening (run cooldown, action audit trail, twin input bounds) |
 | 2026-07-02 | Am4l-babu | Opened PR #27 (calendar connector) → development |
 | 2026-07-02 | Am4l-babu | PRs #23, #25, #26, #27 merged — finance, health, sentiment, calendar done |
 | 2026-07-02 | Am4l-babu | Took over Telegram connector (Atul013 had it marked, no branch pushed) + connectors UI easy-connect rework + setup guides |
