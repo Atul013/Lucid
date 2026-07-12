@@ -53,7 +53,7 @@
 | Notion | 📋 Todo | — | — | Notion API |
 | Discord | 📋 Todo | — | — | Discord bot API |
 | Google Calendar | ✅ Done | Am4l-babu | feature/calendar-connector | Event ingestion + weekly workload analysis (PR #27) |
-| Local Notes (Obsidian etc.) | 🔄 Ongoing | Am4l-babu | feature/local-notes-connector | Scans a local folder for .md files → new `notes` chroma collection, same ingest/search/summary pattern as health/finance. Backend only — frontend /connectors page already has a placeholder card but that page is Atul013's In Review PR, so not touching it to avoid a collision |
+| Local Notes (Obsidian etc.) | 👀 In Review | Am4l-babu | feature/local-notes-connector | Scans a local folder for .md files → new `notes` chroma collection (mock + real), same ingest/search/summary pattern as health/finance; frontmatter/heading/tag parsing, no watchdog dependency (sync on demand, same as every other connector). Backend only — frontend /connectors page already has a placeholder card but that page is Atul013's In Review PR — 68 pytest tests passing (PR #64) |
 
 ---
 
@@ -206,3 +206,4 @@
 | 2026-07-12 | Atul013 | Deployment replanned: Oracle Always Free ARM replaces Azure (B1s too small for the WhatsApp bridge's Chromium) |
 | 2026-07-12 | Am4l-babu | Opened PR #63 (WhatsApp reply formatting + conversation context) → development |
 | 2026-07-12 | Am4l-babu | Started Local Notes connector (backend only — the /connectors frontend card is a placeholder inside Atul013's In Review PR, left untouched) |
+| 2026-07-12 | Am4l-babu | Opened PR #64 (Local Notes connector) → development |
