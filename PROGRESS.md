@@ -86,6 +86,7 @@
 | ESP32 environment nodes | 📋 Todo | — | — | BME680 + mic dB via MQTT → productivity correlation |
 | FOV camera + assistive interaction | 📋 Todo | — | — | MediaPipe posture/presence; faster-whisper offline STT; sign language |
 | Twin × Briefing integration | ✅ Done | Am4l-babu | feature/twin-briefing-integration | Surfaces the twin's stress forecast and the agent's latest run as structured fields on /briefing, plus two stat cards on /today (PR #50 merged). Visually verified with Playwright — both cards render correctly, zero console errors |
+| Budget alerts in Morning Briefing | 🔄 Ongoing | Am4l-babu | feature/budget-briefing | Same pattern as Twin x Briefing: surface subscription waste + next-month cash-flow forecast from /finance/summary as a third stat card on /today (PLAN.md near-term suggestion) |
 
 ---
 
@@ -159,6 +160,7 @@
 | 2026-07-12 | Am4l-babu | Started agent output formatting — structure agent replies for /agent, Telegram, WhatsApp |
 | 2026-07-12 | Am4l-babu | Opened PR #52 (agent output formatting) → development. Caught an accidental direct commit to main before pushing, recovered via cherry-pick onto a clean branch — main unaffected |
 | 2026-07-12 | Am4l-babu | PR #52 merged — agent output formatting done |
+| 2026-07-12 | Am4l-babu | Started budget alerts in Morning Briefing — subscription waste + cash-flow forecast on /today |
 | 2026-07-02 | Am4l-babu | Opened PR #27 (calendar connector) → development |
 | 2026-07-02 | Am4l-babu | PRs #23, #25, #26, #27 merged — finance, health, sentiment, calendar done |
 | 2026-07-02 | Am4l-babu | Took over Telegram connector (Atul013 had it marked, no branch pushed) + connectors UI easy-connect rework + setup guides |
