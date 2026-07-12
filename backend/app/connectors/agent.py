@@ -24,9 +24,52 @@ from app.connectors import telegram as telegram_connector
 from app.connectors import todos
 
 REPORT_FILE = Path("agent_report.json")
+ACTION_LOG_FILE = Path("agent_actions.log")
 MAX_STEPS = 14
 RUN_BUDGET_SECONDS = 720  # live reasoning models can take minutes per step
+# Floor between runs so a scripted or malicious caller with the API key can't
+# burn through the LLM quota (NIM free tier, Azure credit) by hammering
+# /agent/run. Restart-safe: computed from the last report's timestamp, not
+# in-memory state.
+MIN_RUN_INTERVAL_SECONDS = int(os.getenv("AGENT_RUN_COOLDOWN_SECONDS", "600"))
 _lock = threading.Lock()
+_log_lock = threading.Lock()
+
+
+class CooldownActive(Exception):
+    """Raised when /agent/run is called before the cooldown has elapsed."""
+
+    def __init__(self, retry_after: float):
+        self.retry_after = retry_after
+        super().__init__(f"Agent run cooldown active, retry after {retry_after:.0f}s")
+
+
+def _log_event(kind: str, **fields) -> None:
+    """Append one JSON line to the durable action audit trail.
+
+    Distinct from REPORT_FILE, which is overwritten every run and only ever
+    holds the latest one — this is the append-only history of everything the
+    agent has actually done (drafts, calendar proposals, todos, Telegram
+    sends), for after-the-fact review.
+    """
+    entry = {"ts": datetime.now(timezone.utc).isoformat(), "kind": kind, **fields}
+    line = json.dumps(entry, default=str)
+    with _log_lock:
+        with ACTION_LOG_FILE.open("a", encoding="utf-8") as f:
+            f.write(line + "\n")
+
+
+def seconds_until_next_run() -> float:
+    """How long until /agent/run is allowed again; 0 if it's allowed now."""
+    last = last_report()
+    if last is None or not last.get("ran_at"):
+        return 0.0
+    try:
+        ran_at = datetime.fromisoformat(last["ran_at"])
+    except ValueError:
+        return 0.0
+    elapsed = (datetime.now(timezone.utc) - ran_at).total_seconds()
+    return max(0.0, MIN_RUN_INTERVAL_SECONDS - elapsed)
 
 DEFAULT_GOAL = (
     "Review my upcoming week. If my stress risk is high, find what is driving "
@@ -93,6 +136,7 @@ def _tool_draft_message(args: dict, actions: list) -> str:
         "body": str(args.get("body", "")),
     }
     actions.append(draft)
+    _log_event("draft_message", **draft)
     return f"Draft to {draft['to']} saved for your review (not sent)."
 
 
@@ -104,12 +148,14 @@ def _tool_propose_calendar_change(args: dict, actions: list) -> str:
         "reason": str(args.get("reason", "")),
     }
     actions.append(prop)
+    _log_event("calendar_change", **prop)
     return f"Proposal recorded: {prop['action']} ‘{prop['event']}’ (needs your approval)."
 
 
 def _tool_add_todo(args: dict, actions: list) -> str:
     item = todos.add(str(args.get("text", ""))[:300])
     actions.append({"type": "todo", "text": item["text"], "id": item["id"]})
+    _log_event("todo", text=item["text"], id=item["id"])
     return f"Todo #{item['id']} added: {item['text']}"
 
 
@@ -120,6 +166,7 @@ def _tool_send_telegram(args: dict, actions: list) -> str:
     try:
         telegram_connector.send_message("🤖 Lucid agent\n\n" + text)
         actions.append({"type": "telegram", "text": text})
+        _log_event("telegram", text=text)
         return "Wrap-up delivered to your Telegram."
     except Exception as e:
         return f"Telegram send failed: {e}"
@@ -200,10 +247,14 @@ def running() -> bool:
 
 def run_async(goal: str | None = None) -> bool:
     """Kick off a run in the background (live LLM runs take minutes).
-    Returns False if one is already in flight."""
+    Returns False if one is already in flight; raises CooldownActive if the
+    cooldown since the last run hasn't elapsed yet."""
     global _worker
     if running():
         return False
+    retry_after = seconds_until_next_run()
+    if retry_after > 0:
+        raise CooldownActive(retry_after)
     _worker = threading.Thread(target=run, args=(goal,), daemon=True)
     _worker.start()
     return True
@@ -237,6 +288,7 @@ def run(goal: str | None = None) -> dict:
             REPORT_FILE.write_text(json.dumps(report, indent=2), encoding="utf-8")
 
         _flush()
+        _log_event("run_started", goal=goal, mode=report["mode"])
         warned_wrap_up = False
         for step_idx in range(MAX_STEPS):
             if time.monotonic() - started > RUN_BUDGET_SECONDS:
@@ -314,6 +366,7 @@ def run(goal: str | None = None) -> dict:
         report["summary"] = summary or "Run ended without a summary."
         report["finished"] = True
         _flush()
+        _log_event("run_finished", steps=len(steps), actions=len(actions), summary=report["summary"])
         return report
 
 

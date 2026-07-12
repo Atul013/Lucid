@@ -9,8 +9,9 @@ Split deploy: **frontend on Vercel (free), backend on Azure (B1s)**. Chosen so t
 
 1. Push the repo to GitHub (done).
 2. On Vercel: **New Project** → import the repo → set **Root Directory** to `frontend`.
-3. Add an env var:
+3. Add env vars:
    - `NEXT_PUBLIC_API_URL` = `https://<your-azure-backend-url>`
+   - `NEXT_PUBLIC_LUCID_API_KEY` = same value as the backend's `LUCID_API_KEY`
 4. Deploy. Vercel auto-builds on every push to the branch you select.
 
 No Dockerfile needed — Vercel detects Next.js.
@@ -38,6 +39,7 @@ small Linux VM.
    GOOGLE_CLIENT_SECRET=...
    GOOGLE_REDIRECT_URI=https://<your-backend-domain>/auth/google/callback
    NVIDIA_API_KEY=...
+   LUCID_API_KEY=<long random string — python -c "import secrets; print(secrets.token_urlsafe(32))">
    ```
 4. Run it (behind a process manager so it survives reboots):
    ```bash
@@ -45,11 +47,16 @@ small Linux VM.
    ```
    For production, put it behind **Caddy** (auto-HTTPS in ~3 lines) and run uvicorn via `systemd`.
 
-### Two things that MUST change for production
+### Three things that MUST change for production
 
 - **Google OAuth needs HTTPS.** Add the new `https://<backend>/auth/google/callback`
   to the GCP OAuth client's authorized redirect URIs, and update `GOOGLE_REDIRECT_URI`.
 - **CORS:** `ALLOWED_ORIGINS` must list the Vercel URL exactly.
+- **API key:** set `LUCID_API_KEY` on the backend and the same value as
+  `NEXT_PUBLIC_LUCID_API_KEY` on Vercel. Without it the API is open to anyone
+  who finds the URL — it guards personal archive data. Rate limiting
+  (`RATE_LIMIT_PER_MINUTE`, default 300/min/IP), a 5 MB payload cap and an
+  audit log are always on; see `backend/app/security.py`.
 
 ---
 
