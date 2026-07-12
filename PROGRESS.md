@@ -25,7 +25,7 @@
 | ChromaDB setup | ✅ Done | Atul013 | feature/chromadb-ingestion | Local vector DB (PersistentClient) |
 | Ingestion pipeline (chunk + embed) | ✅ Done | Atul013 | feature/chromadb-ingestion | Embeds via MiniLM, stores in ChromaDB |
 | Google OAuth | ✅ Done | Atul013 | feature/gmail-connector | Needed for Gmail, Keep, Calendar |
-| Deployment — Vercel (FE) + Azure (BE) | 📋 Todo | — | — | Split deploy: FE free on Vercel, BE on Azure B1s. Budget: ₹9,569 Azure credit must last until Apr 2027. FE reads NEXT_PUBLIC_API_URL; BE CORS via ALLOWED_ORIGINS |
+| Deployment — Vercel (FE) + Oracle ARM (BE) | 🔄 Ongoing | Atul013 | feature/oracle-deploy | **Azure dropped**: B1s (1GB) can't fit headless Chromium for the WhatsApp bridge. Oracle Always Free ARM (4 OCPU/24GB) is free forever and leaves the ₹9,569 credit untouched. FastAPI + Chroma + bridge + Caddy on one VM; FE on Vercel. HTTPS mandatory (Google OAuth + browser mic + Vercel mixed-content) |
 | Dockerization | 📋 Todo | — | — | Deferred. backend/Dockerfile + compose exist but unused for split deploy; revisit if BE needs containerizing on Azure |
 | Tests + CI | ✅ Done | Am4l-babu | feature/backend-tests-ci | 25 pytest tests (finance parser, twin simulation, agent cooldown) + GitHub Actions workflow. First push failed CI for real (sys.path issue), fixed with pytest.ini, confirmed green on ubuntu-latest (PR #56 merged) |
 | Security hardening (API auth + rate limiting) | ✅ Done | Am4l-babu | feature/security-hardening | X-API-Key middleware, per-IP rate limit, security headers, audit log — architecture adapted from secure_os_layer review (PR #44 merged) |
@@ -203,3 +203,4 @@
 | 2026-07-12 | Am4l-babu | Checked mobile on-device LLM binding (llama.rn) — NDK missing, ANDROID_HOME unset, no Xcode on Windows; deferred. Started mock-mode search embeddings instead (fastembed ONNX MiniLM, no compiler needed) |
 | 2026-07-12 | Am4l-babu | PR #58 merged — data export/right-to-delete done. Opened PR #60 (mock-mode search embeddings) → development |
 | 2026-07-12 | Am4l-babu | PR #60 merged (development→main cut also landed). Started WhatsApp reply formatting + conversation context |
+| 2026-07-12 | Atul013 | Deployment replanned: Oracle Always Free ARM replaces Azure (B1s too small for the WhatsApp bridge's Chromium) |
