@@ -133,7 +133,12 @@ def fetch_updates() -> list[dict]:
     archived. A bot's username is discoverable, so without this any
     stranger who DMs the bot before the real owner does could otherwise
     claim ownership, or later inject arbitrary text into the owner's
-    archive (which feeds Ego/Drift/Twin/the agent)."""
+    archive (which feeds Ego/Drift/Twin/the agent).
+
+    The claim only ever happens from a private chat — if the bot is also
+    added to a group, that group must never be able to seize ownership
+    before the real owner's first DM (a group's members are, definitionally,
+    not just the owner)."""
     cfg = _read_config()
     token = cfg.get("bot_token")
     if not token:
@@ -147,10 +152,11 @@ def fetch_updates() -> list[dict]:
     messages = []
     for u in updates:
         cfg["last_update_id"] = u["update_id"]
-        record = _normalize(u.get("message") or {})
+        msg = u.get("message") or {}
+        record = _normalize(msg)
         if not record:
             continue
-        if not cfg.get("chat_id"):
+        if not cfg.get("chat_id") and msg.get("chat", {}).get("type") == "private":
             cfg["chat_id"] = record["chat_id"]
         if record["chat_id"] != cfg.get("chat_id"):
             continue  # not the owner's chat — do not archive
@@ -276,8 +282,9 @@ def _process_update(u: dict, cfg: dict) -> None:
     # bot's username is discoverable, so without this any stranger who
     # finds/DMs the bot could run /del, /add etc. on the real owner's todo
     # list, or seed the owner's Ego/Drift/Twin-feeding archive with their
-    # own text.
-    if not cfg.get("chat_id"):
+    # own text. Gated to private chats so a group the bot is added to can
+    # never seize ownership ahead of the real owner's first DM.
+    if not cfg.get("chat_id") and msg.get("chat", {}).get("type") == "private":
         cfg["chat_id"] = record["chat_id"]
     if record["chat_id"] != cfg.get("chat_id"):
         try:

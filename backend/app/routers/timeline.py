@@ -4,6 +4,7 @@ from collections import defaultdict
 from email.utils import parsedate_to_datetime
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
+from app import crypto_store
 from app.connectors import chroma, llm
 
 router = APIRouter()
@@ -38,9 +39,7 @@ def _extract_json(s: str) -> dict:
 
 @router.get("/ego/timeline")
 def get_timeline():
-    if CACHE.exists():
-        return json.loads(CACHE.read_text(encoding="utf-8"))
-    return {"generated": False, "days": []}
+    return crypto_store.read_json(CACHE, {"generated": False, "days": []})
 
 
 @router.post("/ego/timeline/build")
@@ -81,5 +80,5 @@ def build_timeline():
     days.sort(key=lambda d: d.get("date", ""))
 
     result = {"generated": True, "days": days}
-    CACHE.write_text(json.dumps(result), encoding="utf-8")
+    crypto_store.write_json(CACHE, result)
     return result

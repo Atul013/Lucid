@@ -3,6 +3,7 @@ import re
 from collections import defaultdict
 from pathlib import Path
 from fastapi import APIRouter, HTTPException
+from app import crypto_store
 from app.connectors import chroma, llm
 
 router = APIRouter()
@@ -35,9 +36,7 @@ def _extract_json(s: str) -> dict:
 
 @router.get("/relationships")
 def get_relationships():
-    if CACHE.exists():
-        return json.loads(CACHE.read_text(encoding="utf-8"))
-    return {"generated": False, "relationships": []}
+    return crypto_store.read_json(CACHE, {"generated": False, "relationships": []})
 
 
 @router.post("/relationships/build")
@@ -75,5 +74,5 @@ def build_relationships():
     rels.sort(key=lambda r: r["count"], reverse=True)
 
     result = {"generated": True, "relationships": rels}
-    CACHE.write_text(json.dumps(result), encoding="utf-8")
+    crypto_store.write_json(CACHE, result)
     return result

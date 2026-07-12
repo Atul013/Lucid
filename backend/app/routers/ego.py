@@ -3,6 +3,7 @@ import re
 from pathlib import Path
 from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException
+from app import crypto_store
 from app.connectors import chroma, llm
 
 router = APIRouter()
@@ -34,9 +35,7 @@ def _extract_json(s: str) -> dict:
 
 @router.get("/ego/insights")
 def ego_insights():
-    if CACHE.exists():
-        return json.loads(CACHE.read_text(encoding="utf-8"))
-    return {"generated": False}
+    return crypto_store.read_json(CACHE, {"generated": False})
 
 
 @router.post("/ego/analyze")
@@ -69,5 +68,5 @@ def ego_analyze():
         "summary": parsed.get("summary", ""),
         "themes": parsed.get("themes", []),
     }
-    CACHE.write_text(json.dumps(result), encoding="utf-8")
+    crypto_store.write_json(CACHE, result)
     return result

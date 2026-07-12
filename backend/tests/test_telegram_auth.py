@@ -11,13 +11,13 @@ import pytest
 from app.connectors import telegram
 
 
-def _update(update_id, chat_id, text):
+def _update(update_id, chat_id, text, chat_type="private"):
     return {
         "update_id": update_id,
         "message": {
             "message_id": update_id,
             "date": 0,
-            "chat": {"id": chat_id, "type": "private", "first_name": "Someone"},
+            "chat": {"id": chat_id, "type": chat_type, "first_name": "Someone"},
             "from": {"id": chat_id, "first_name": "Someone"},
             "text": text,
         },
@@ -95,3 +95,32 @@ def test_owner_can_still_run_commands(monkeypatch):
     cfg = {"bot_token": "t", "chat_id": "111"}
 
     telegram._process_update(_update(1, "111", "/clear"), cfg)  # must not raise
+
+
+def test_group_message_cannot_claim_ownership(archived):
+    # Regression: the bot must never let a group it's been added to (or a
+    # stray sender inside one) seize ownership ahead of the real owner's
+    # first private DM — a group's membership is, by definition, not just
+    # the owner.
+    cfg = {"bot_token": "t"}
+    telegram._process_update(_update(1, "999", "hi from a group", chat_type="group"), cfg)
+
+    assert cfg.get("chat_id") is None
+    assert len(archived) == 0
+
+    # The real owner's subsequent private DM claims ownership normally.
+    telegram._process_update(_update(2, "111", "hello", chat_type="private"), cfg)
+    assert cfg["chat_id"] == "111"
+
+
+def test_fetch_updates_does_not_claim_ownership_from_group_messages(monkeypatch):
+    updates = [_update(1, "999", "hi from a group", chat_type="group")]
+    monkeypatch.setattr(telegram, "_call", lambda method, token, **p: updates if method == "getUpdates" else {})
+    monkeypatch.setattr(telegram, "_read_config", lambda: {"bot_token": "t"})
+    written = {}
+    monkeypatch.setattr(telegram, "_write_config", lambda cfg: written.update(cfg))
+
+    messages = telegram.fetch_updates()
+
+    assert messages == []
+    assert "chat_id" not in written
