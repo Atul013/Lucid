@@ -27,6 +27,7 @@
 | Google OAuth | ✅ Done | Atul013 | feature/gmail-connector | Needed for Gmail, Keep, Calendar |
 | Deployment — Vercel (FE) + Azure (BE) | 📋 Todo | — | — | Split deploy: FE free on Vercel, BE on Azure B1s. Budget: ₹9,569 Azure credit must last until Apr 2027. FE reads NEXT_PUBLIC_API_URL; BE CORS via ALLOWED_ORIGINS |
 | Dockerization | 📋 Todo | — | — | Deferred. backend/Dockerfile + compose exist but unused for split deploy; revisit if BE needs containerizing on Azure |
+| Tests + CI | 🔄 Ongoing | Am4l-babu | feature/backend-tests-ci | No automated tests exist anywhere in the repo. Starting with the finance parser (clear input/output contract per PLAN.md) + twin simulation math — both pure, no I/O — plus a GitHub Actions workflow to run them on every push/PR |
 | Security hardening (API auth + rate limiting) | ✅ Done | Am4l-babu | feature/security-hardening | X-API-Key middleware, per-IP rate limit, security headers, audit log — architecture adapted from secure_os_layer review (PR #44 merged) |
 
 ---
@@ -163,6 +164,7 @@
 | 2026-07-12 | Am4l-babu | Started budget alerts in Morning Briefing — subscription waste + cash-flow forecast on /today |
 | 2026-07-12 | Am4l-babu | Opened PR #54 (budget alerts) → development |
 | 2026-07-12 | Am4l-babu | PR #54 merged — budget alerts done |
+| 2026-07-12 | Am4l-babu | Started tests + CI — pytest for finance parser + twin simulation, GitHub Actions workflow |
 | 2026-07-02 | Am4l-babu | Opened PR #27 (calendar connector) → development |
 | 2026-07-02 | Am4l-babu | PRs #23, #25, #26, #27 merged — finance, health, sentiment, calendar done |
 | 2026-07-02 | Am4l-babu | Took over Telegram connector (Atul013 had it marked, no branch pushed) + connectors UI easy-connect rework + setup guides |
