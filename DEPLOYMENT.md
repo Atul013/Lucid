@@ -257,6 +257,53 @@ their chat as the archive owner. See `docs/connect/WHATSAPP_CONNECT.md`.
 
 ---
 
+## Keeping WhatsApp linked (read this before you deploy)
+
+The session is **not a token** — it is a whole ~130MB Chromium profile, backed by
+LevelDB, living in `WA_AUTH_PATH`. If it's lost *or corrupted*, whatsapp-web.js can't
+tell the difference: both look like "not logged in", and the bridge comes back demanding
+a QR. On a server that means SSHing in and scanning a code that **rotates every ~20s**,
+with the business-SIM phone in hand — on every restart. In practice the bridge just goes
+quietly offline and messages are lost until someone notices.
+
+Three things prevent that, all already in place:
+
+**1. Persistent absolute path.** `WA_AUTH_PATH=/var/lib/lucid/wwebjs_auth` — outside the
+git checkout, on real block storage. (The default `./.wwebjs_auth` is relative to the
+*working directory*; under systemd that can silently resolve elsewhere and create a
+fresh, empty profile while the real one sits untouched.)
+
+**2. Graceful shutdown.** The bridge traps SIGTERM/SIGINT and calls `client.destroy()`
+so Chromium flushes LevelDB and releases its locks. Without it, **even a routine
+`systemctl restart` can corrupt the profile and unlink the account** — Node's default is
+to exit immediately. Do not put `KillSignal=SIGKILL` in the unit; SIGTERM is the point.
+
+**3. A snapshot.** Take one right after linking:
+
+```bash
+cd /opt/lucid/app/backend/whatsapp_service
+sudo -u lucid WA_AUTH_PATH=/var/lib/lucid/wwebjs_auth npm run session:backup
+```
+
+If it ever unlinks, restore rather than hunting for the phone:
+
+```bash
+sudo systemctl stop lucid-wa
+sudo -u lucid WA_AUTH_PATH=/var/lib/lucid/wwebjs_auth npm run session:restore
+sudo systemctl start lucid-wa
+```
+
+**And if you genuinely must re-link:** don't SSH. Open `/connectors` → WhatsApp card →
+*"Service offline — operator setup"* → **Show link QR**. It renders the live QR in the
+browser and flips to connected on its own.
+
+> **If it still unlinks repeatedly**, the escalation is whatsapp-web.js's `RemoteAuth`,
+> which stores the session in MongoDB/S3 instead of local disk — immune to disk loss and
+> corruption. It is deliberately *not* used here: it puts a database in the critical path
+> and is slow with a 130MB profile. Reach for it only if the above proves insufficient.
+
+---
+
 ## Security notes
 
 - **Never expose 3001.** The bridge's `/send` has **no auth** — anything that can reach
