@@ -101,7 +101,7 @@
 | Relationship Intelligence page | 🔄 Ongoing | Atul013 | feature/relationship-intelligence | /relationships route |
 | Emotion Timeline page | 🔄 Ongoing | Atul013 | feature/emotion-timeline | /timeline route |
 | Visual Knowledge Graph | 🔄 Ongoing | Atul013 | feature/knowledge-graph | Animated force-directed constellation (canvas) |
-| Mobile app (React Native/Expo) | 🔄 Ongoing | Am4l-babu | feature/mobile-client-rn | New client surface, not a rebuild: Archive chat screen against the hardened backend (X-API-Key). On-device LLM (llama.rn, hybrid local+cloud) is the scoped follow-up, not built yet — needs Android Studio/Xcode this dev box doesn't have |
+| Mobile app (React Native/Expo) | 👀 In Review | Am4l-babu | feature/mobile-client-rn | New client surface, not a rebuild: Archive chat screen against the hardened backend (X-API-Key). On-device LLM (llama.rn, hybrid local+cloud) is the scoped follow-up, not built yet — needs Android Studio/Xcode this dev box doesn't have (PR #49). Device/emulator launch unverified — needs testing on a machine with native tooling |
 
 ---
 
@@ -149,6 +149,7 @@
 | 2026-07-12 | Am4l-babu | Opened PR #47 (agent loop safety hardening) → development |
 | 2026-07-12 | Am4l-babu | PR #47 merged — agent loop safety hardening done |
 | 2026-07-12 | Am4l-babu | Started mobile app (React Native/Expo) — Archive chat screen against hardened backend; on-device LLM scoped as follow-up |
+| 2026-07-12 | Am4l-babu | Opened PR #49 (mobile client scaffold) → development — device/emulator launch needs verification on a machine with Android Studio/Xcode |
 | 2026-07-02 | Am4l-babu | Opened PR #27 (calendar connector) → development |
 | 2026-07-02 | Am4l-babu | PRs #23, #25, #26, #27 merged — finance, health, sentiment, calendar done |
 | 2026-07-02 | Am4l-babu | Took over Telegram connector (Atul013 had it marked, no branch pushed) + connectors UI easy-connect rework + setup guides |
