@@ -27,7 +27,8 @@ from app.routers.snn import router as snn_router
 from app.routers.privacy import router as privacy_router
 from app.connectors import telegram as telegram_connector
 from app.connectors import reminders
-from app import security
+from app.connectors import chroma
+from app import embeddings, security
 
 app = FastAPI(title="Lucid API", docs_url=None, redoc_url=None)
 
@@ -38,6 +39,11 @@ def start_background_workers():
     # and the reminder scheduler that fires due todo reminders.
     telegram_connector.start_poller()
     reminders.start()
+    # Load (and, on first run, download) the mock-mode search embedding model
+    # in the background, so it's not the first search request's problem. The
+    # real ChromaDB backend embeds on its own — nothing to warm there.
+    if chroma.MOCK_MODE:
+        embeddings.warm()
 
 # Security stack (API key auth, rate limit, body cap, audit log, headers).
 # Must be installed before CORS so CORS stays outermost — see security.install.
