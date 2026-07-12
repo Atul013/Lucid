@@ -5,6 +5,7 @@ import { Shell, Kicker, AccentButton, Thinking, StateNote, Arrow } from "../ui";
 import { CardContainer, CardBody, CardItem } from "../components/card-3d";
 import { EncryptedText } from "../components/encrypted-text";
 import { API } from "../api";
+import { RippleBackground } from "../components/ripple-background";
 
 
 type TwinSnapshot = { current_risk: number; current_level: string; days_trained: number };
@@ -54,7 +55,12 @@ export default function Today() {
     setState("building");
     try {
       const r = await fetch(`${API}/briefing/build`, { method: "POST" });
-      if (!r.ok) throw new Error();
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        // 400 = archive empty, go back to empty state so user can retry
+        if (r.status === 400) { setState("empty"); return; }
+        throw new Error(d.detail ?? "build failed");
+      }
       setData(await r.json());
       setState("ready");
     } catch {
@@ -63,7 +69,9 @@ export default function Today() {
   }
 
   return (
-    <main className="mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-3xl flex-col px-6 py-20 sm:py-28">
+    <>
+    <RippleBackground />
+    <main className="relative mx-auto flex min-h-[calc(100dvh-5rem)] w-full max-w-3xl flex-col px-6 py-20 sm:py-28" style={{ zIndex: 1 }}>
       {/* ── Header ── */}
       <header className="mb-16 sm:mb-24">
         <div className="mb-6">
@@ -102,10 +110,18 @@ export default function Today() {
       {state === "loading" && <Thinking label="Opening your day…" />}
       {state === "building" && <Thinking label="Composing your briefing…" />}
       {state === "error" && (
-        <StateNote>
-          Couldn&rsquo;t reach the backend on{" "}
-          <span className="font-mono text-faint">localhost:8000</span>.
-        </StateNote>
+        <div className="card max-w-xl p-8">
+          <p className="text-[0.98rem] leading-relaxed text-muted">
+            Couldn&rsquo;t reach the backend. Make sure it&rsquo;s running on{" "}
+            <span className="font-mono text-faint">localhost:8000</span>.
+          </p>
+          <button
+            onClick={build}
+            className="mt-5 cursor-pointer font-mono text-[0.66rem] uppercase tracking-[0.18em] text-faint transition-colors hover:text-accent"
+          >
+            ↻ Try again
+          </button>
+        </div>
       )}
 
       {state === "empty" && (
@@ -148,6 +164,16 @@ export default function Today() {
                     <p className="whitespace-pre-wrap font-display text-[1.65rem] leading-relaxed text-ink sm:text-[1.9rem]">
                       {data.briefing}
                     </p>
+                  </CardItem>
+
+                  {/* Closing quote mark */}
+                  <CardItem
+                    as="span"
+                    translateZ={60}
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -bottom-10 -right-2 select-none font-display text-[9rem] leading-none text-accent/10"
+                  >
+                    &rdquo;
                   </CardItem>
                 </div>
               </CardItem>
@@ -217,5 +243,6 @@ export default function Today() {
         </article>
       )}
     </main>
+    </>
   );
 }

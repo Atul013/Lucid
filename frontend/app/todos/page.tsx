@@ -1,13 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Shell, PageHeader, Reveal } from "../ui";
 import { PlaceholdersVanishInput } from "../components/placeholders-vanish-input";
 import { MovingBorder } from "../components/moving-border";
 import { RippleBackground } from "../components/ripple-background";
+import { SpotlightCard } from "../components/spotlight-card";
+import { ConfettiBurst } from "../components/confetti-burst";
 import { API } from "../api";
-
 
 type Todo = {
   id: number;
@@ -56,7 +57,7 @@ function useBrowserReminders(items: Todo[]) {
     if (Notification.permission !== "granted") return;
     const shown: number[] = JSON.parse(localStorage.getItem("lucid-notified") ?? "[]");
     const fresh = due.filter((t) => !shown.includes(t.id));
-    for (const t of fresh) new Notification("⏰ Lucid reminder", { body: t.text });
+    for (const t of fresh) new Notification("Lucid reminder", { body: t.text });
     if (fresh.length)
       localStorage.setItem(
         "lucid-notified",
@@ -69,14 +70,13 @@ export default function TodosPage() {
   const [items, setItems] = useState<Todo[]>([]);
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   const [text, setText] = useState("");
   const [remindAt, setRemindAt] = useState("");
   const [channels, setChannels] = useState<string[]>(["telegram"]);
   const [showReminder, setShowReminder] = useState(false);
-
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editText, setEditText] = useState("");
+  const [showConfetti, setShowConfetti] = useState(false);
 
   const refresh = useCallback(() => {
     fetch(`${API}/todos`, { signal: AbortSignal.timeout(5000) })
@@ -129,8 +129,7 @@ export default function TodosPage() {
     });
 
   const toggle = (t: Todo) => {
-    // Optimistic — flip locally so checkbox/checkmark responds immediately
-    setItems((prev) => prev.map((i) => i.id === t.id ? { ...i, done: !i.done } : i));
+    setItems((prev) => prev.map((i) => (i.id === t.id ? { ...i, done: !i.done } : i)));
     act(async () => {
       await jsonOrThrow(
         await fetch(`${API}/todos/${t.id}`, {
@@ -156,7 +155,6 @@ export default function TodosPage() {
     });
 
   const remove = (t: Todo) => {
-    // Optimistic — remove from list immediately, backend confirms
     setItems((prev) => prev.filter((i) => i.id !== t.id));
     act(async () => {
       await jsonOrThrow(await fetch(`${API}/todos/${t.id}`, { method: "DELETE" }));
@@ -177,10 +175,20 @@ export default function TodosPage() {
   const open = items.filter((t) => !t.done);
   const closed = items.filter((t) => t.done);
 
+  const prevOpenLen = useRef(0);
+  useEffect(() => {
+    if (loaded && prevOpenLen.current > 0 && open.length === 0 && closed.length > 0) {
+      setShowConfetti(true);
+      const timer = setTimeout(() => setShowConfetti(false), 3200);
+      return () => clearTimeout(timer);
+    }
+    prevOpenLen.current = open.length;
+  }, [open.length, closed.length, loaded]);
+
   return (
     <>
       <RippleBackground />
-
+      <ConfettiBurst active={showConfetti} />
       <div className="relative" style={{ zIndex: 1 }}>
         <Shell>
           <PageHeader
@@ -188,9 +196,7 @@ export default function TodosPage() {
             title="Todos"
             lead="One list everywhere — edit it here or chat with your Telegram bot (/todo, /add, /done). Reminders arrive on the channels you pick."
           />
-
           <Reveal className="flex flex-col gap-8">
-            {/* Add — Moving Border wraps the entire card */}
             <MovingBorder borderRadius="1.25rem">
               <div className="card border-0 flex flex-col gap-3 p-5 sm:p-6">
                 <PlaceholdersVanishInput
@@ -204,14 +210,12 @@ export default function TodosPage() {
                   onChange={(e) => setText(e.target.value)}
                   onSubmit={add}
                 />
-
                 <button
                   onClick={() => setShowReminder((s) => !s)}
                   className="self-start font-mono text-[0.6rem] uppercase tracking-[0.18em] text-faint underline decoration-line-2 underline-offset-4 hover:text-muted"
                 >
-                  {showReminder ? "− Remove reminder" : "+ Set a reminder"}
+                  {showReminder ? "- Remove reminder" : "+ Set a reminder"}
                 </button>
-
                 {showReminder && (
                   <div className="flex flex-wrap items-center gap-3 rounded-lg border border-line bg-surface-2/50 p-3">
                     <input
@@ -243,22 +247,29 @@ export default function TodosPage() {
                       })}
                     </div>
                     <span className="w-full font-mono text-[0.58rem] tracking-wide text-faint">
-                      Telegram needs the bot connected · WhatsApp needs the bridge running ·
-                      Email needs Google reconnected once (send permission) · Browser fires
-                      while this page is open
+                      Telegram needs the bot connected · WhatsApp needs the bridge running · Email
+                      needs Google reconnected once · Browser fires while this page is open
                     </span>
                   </div>
                 )}
               </div>
             </MovingBorder>
 
+            <div className="px-1">
+              <p className="font-display text-[1.05rem] italic leading-relaxed text-faint">
+                &ldquo;The secret of getting ahead is getting started.&rdquo;
+              </p>
+              <p className="mt-1.5 font-mono text-[0.58rem] uppercase tracking-[0.22em] text-line-2">
+                Mark Twain
+              </p>
+            </div>
+
             {error && (
               <span className="font-mono text-[0.65rem] tracking-wide text-muted">
-                ✗ {error}
+                x {error}
               </span>
             )}
 
-            {/* Open items */}
             <motion.div layout className="flex flex-col gap-2">
               <AnimatePresence initial={false}>
                 {loaded && open.length === 0 && closed.length === 0 && !error && (
@@ -302,11 +313,10 @@ export default function TodosPage() {
               </AnimatePresence>
             </motion.div>
 
-            {/* Done items */}
             {closed.length > 0 && (
               <motion.div layout className="flex flex-col gap-2">
                 <span className="font-mono text-[0.6rem] uppercase tracking-[0.2em] text-faint">
-                  Done — {closed.length}
+                  Done &mdash; <NumberTicker value={closed.length} />
                 </span>
                 <AnimatePresence initial={false}>
                   {closed.map((t) => (
@@ -386,105 +396,133 @@ function TodoRow({
     !todo.done && todo.remind_at && new Date(todo.remind_at).getTime() <= Date.now();
 
   return (
-    <div className="card group flex items-center gap-3 px-4 py-3">
-      {/* Ripple rings — position:fixed so they escape button clipping */}
+    <React.Fragment>
       {ripples.flatMap((r) =>
-        [0, 220, 440].map((delay) => (
-          <span
-            key={`${r.id}-${delay}`}
-            aria-hidden
-            style={{
-              position: "fixed",
-              left: r.x,
-              top: r.y,
-              transform: "translate(-50%, -50%)",
-              width: 0,
-              height: 0,
-              borderRadius: "50%",
-              border: `1px solid rgba(255,125,60,${(0.6 - delay * 0.0007).toFixed(2)})`,
-              animation: `lucid-ripple 900ms ease-out ${delay}ms forwards`,
-              pointerEvents: "none",
-              zIndex: 9999,
+        [0, 220, 440].map((delay) => {
+          const alpha = (0.6 - delay * 0.0007).toFixed(2);
+          return (
+            <span
+              key={`${r.id}-${delay}`}
+              aria-hidden
+              style={{
+                position: "fixed",
+                left: r.x,
+                top: r.y,
+                transform: "translate(-50%, -50%)",
+                width: 0,
+                height: 0,
+                borderRadius: "50%",
+                border: `1px solid rgba(255,125,60,${alpha})`,
+                animation: `lucid-ripple 900ms ease-out ${delay}ms forwards`,
+                pointerEvents: "none",
+                zIndex: 9999,
+              }}
+            />
+          );
+        }),
+      )}
+      <SpotlightCard className="card group">
+        <div className="flex w-full items-center gap-3 px-4 py-3">
+
+        <button
+          onClick={handleCheckClick}
+          aria-label={todo.done ? "Mark as not done" : "Mark as done"}
+          className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-colors duration-200 ${
+            todo.done
+              ? "border-accent/60 bg-accent/20 text-accent"
+              : "border-line-2 hover:border-faint"
+          }`}
+        >
+          {todo.done && (
+            <span
+              aria-hidden
+              style={{ animation: "checkmark-pop 0.3s cubic-bezier(0.34,1.56,0.64,1) both" }}
+            >
+              <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none">
+                <path
+                  d="M2 6l3 3 5-6"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          )}
+        </button>
+
+        {editing ? (
+          <input
+            ref={inputRef}
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") onSaveEdit();
+              if (e.key === "Escape") onCancelEdit();
             }}
+            onBlur={onSaveEdit}
+            className="h-8 w-full rounded-md border border-line-2 bg-surface-2 px-2 text-[0.88rem] text-ink focus:border-faint focus:outline-none"
           />
-        ))
-      )}
-
-      {/* Checkbox */}
-      <button
-        onClick={handleCheckClick}
-        aria-label={todo.done ? "Mark as not done" : "Mark as done"}
-        className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border transition-colors duration-200 ${
-          todo.done
-            ? "border-accent/60 bg-accent/20 text-accent"
-            : "border-line-2 hover:border-faint"
-        }`}
-      >
-        {/* Conditionally mount so the animation replays every time the item becomes done */}
-        {todo.done && (
-          <span
-            aria-hidden
-            style={{ animation: "checkmark-pop 0.3s cubic-bezier(0.34,1.56,0.64,1) both" }}
+        ) : (
+          <button
+            onClick={todo.done ? undefined : onStartEdit}
+            className={`min-w-0 flex-1 truncate text-left text-[0.88rem] ${
+              todo.done ? "text-faint line-through" : "text-ink hover:text-muted"
+            }`}
+            title={todo.done ? undefined : "Click to edit"}
           >
-            <svg viewBox="0 0 12 12" className="h-3 w-3" fill="none">
-              <path
-                d="M2 6l3 3 5-6"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
+            {todo.text}
+          </button>
         )}
-      </button>
 
-      {editing ? (
-        <input
-          ref={inputRef}
-          value={editText}
-          onChange={(e) => setEditText(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") onSaveEdit();
-            if (e.key === "Escape") onCancelEdit();
-          }}
-          onBlur={onSaveEdit}
-          className="h-8 w-full rounded-md border border-line-2 bg-surface-2 px-2 text-[0.88rem] text-ink focus:border-faint focus:outline-none"
-        />
-      ) : (
+        {todo.remind_at && !todo.done && (
+          <button
+            onClick={onClearReminder}
+            title="Click to remove this reminder"
+            className={`shrink-0 rounded-full border px-2.5 py-1 font-mono text-[0.58rem] tracking-wide ${
+              overdue
+                ? "border-accent/50 text-accent"
+                : "border-line-2 text-faint hover:text-muted"
+            }`}
+          >
+            {fmtReminder(todo.remind_at)}
+            {todo.notify_via.length > 0 && ` · ${todo.notify_via.join(", ")}`}
+          </button>
+        )}
+
         <button
-          onClick={todo.done ? undefined : onStartEdit}
-          className={`min-w-0 flex-1 truncate text-left text-[0.88rem] ${
-            todo.done ? "text-faint line-through" : "text-ink hover:text-muted"
-          }`}
-          title={todo.done ? undefined : "Click to edit"}
+          onClick={onDelete}
+          aria-label="Delete todo"
+          className="shrink-0 rounded-md px-1.5 text-faint opacity-0 transition-opacity hover:text-muted group-hover:opacity-100"
         >
-          {todo.text}
+          x
         </button>
-      )}
-
-      {todo.remind_at && !todo.done && (
-        <button
-          onClick={onClearReminder}
-          title="Click to remove this reminder"
-          className={`shrink-0 rounded-full border px-2.5 py-1 font-mono text-[0.58rem] tracking-wide ${
-            overdue
-              ? "border-accent/50 text-accent"
-              : "border-line-2 text-faint hover:text-muted"
-          }`}
-        >
-          ⏰ {fmtReminder(todo.remind_at)}
-          {todo.notify_via.length > 0 && ` · ${todo.notify_via.join(", ")}`}
-        </button>
-      )}
-
-      <button
-        onClick={onDelete}
-        aria-label="Delete todo"
-        className="shrink-0 rounded-md px-1.5 text-faint opacity-0 transition-opacity hover:text-muted group-hover:opacity-100"
-      >
-        ✕
-      </button>
-    </div>
+      </div>
+      </SpotlightCard>
+    </React.Fragment>
   );
+}
+
+function NumberTicker({ value }: { value: number }) {
+  const [display, setDisplay] = useState(value);
+  const fromRef = useRef(value);
+  const rafRef = useRef(0);
+
+  useEffect(() => {
+    const from = fromRef.current;
+    fromRef.current = value;
+    if (from === value) return;
+    const start = performance.now();
+    const duration = 480;
+    function tick(now: number) {
+      const p = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setDisplay(Math.round(from + (value - from) * eased));
+      if (p < 1) rafRef.current = requestAnimationFrame(tick);
+    }
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [value]);
+
+  return <span>{display}</span>;
 }

@@ -12,7 +12,6 @@ const LINKS = [
   { href: "/twin", label: "Twin" },
   { href: "/agent", label: "Agent" },
   { href: "/tripwire", label: "Tripwire" },
-  { href: "/graph", label: "Graph" },
   { href: "/relationships", label: "People" },
   { href: "/timeline", label: "Timeline" },
   { href: "/connectors", label: "Sources" },
