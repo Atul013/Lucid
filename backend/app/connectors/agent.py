@@ -159,14 +159,42 @@ def _tool_add_todo(args: dict, actions: list) -> str:
     return f"Todo #{item['id']} added: {item['text']}"
 
 
+def _extract_headline_bullets(args: dict) -> tuple[str, list[str]]:
+    """Shared parsing for finish/send_telegram: a one-sentence headline plus
+    a short bulleted list, built server-side rather than trusting the LLM to
+    format free text consistently — mirrors the structured-JSON pattern
+    already used by Ego/Drift instead of inventing a new one."""
+    headline = str(args.get("headline", "") or args.get("summary", "") or args.get("text", ""))[:300]
+    bullets_raw = args.get("bullets", [])
+    bullets = (
+        [str(b).strip()[:200] for b in bullets_raw if str(b).strip()][:8]
+        if isinstance(bullets_raw, list)
+        else []
+    )
+    return headline, bullets
+
+
+def _format_telegram_message(headline: str, bullets: list[str]) -> str:
+    # Plain text, no markdown — WhatsApp's own prompts in this codebase
+    # deliberately avoid markdown symbols too, since client-side rendering
+    # fidelity for *bold*/_italic_ varies; a unicode bullet always renders.
+    lines = ["🤖 Lucid agent", "", headline]
+    if bullets:
+        lines.append("")
+        lines.extend(f"• {b}" for b in bullets)
+    return "\n".join(lines)
+
+
 def _tool_send_telegram(args: dict, actions: list) -> str:
-    text = str(args.get("text", ""))[:3500]
+    headline, bullets = _extract_headline_bullets(args)
+    if not headline and not bullets:
+        return "Nothing to send — call with a headline or bullets."
     if not telegram_connector.is_connected():
         return "Telegram is not connected — wrap-up kept in the report instead."
     try:
-        telegram_connector.send_message("🤖 Lucid agent\n\n" + text)
-        actions.append({"type": "telegram", "text": text})
-        _log_event("telegram", text=text)
+        telegram_connector.send_message(_format_telegram_message(headline, bullets))
+        actions.append({"type": "telegram", "headline": headline, "bullets": bullets})
+        _log_event("telegram", headline=headline, bullets=bullets)
         return "Wrap-up delivered to your Telegram."
     except Exception as e:
         return f"Telegram send failed: {e}"
@@ -206,10 +234,21 @@ TOOLS = {
         "run": _tool_add_todo,
     },
     "send_telegram": {
-        "spec": "send_telegram(text: str) — send the final wrap-up to the user's own Telegram",
+        "spec": (
+            "send_telegram(headline: str, bullets: list[str]) — send the final "
+            "wrap-up to the user's own Telegram. headline: one sentence. "
+            "bullets: 2-5 short items (findings and/or actions taken)."
+        ),
         "run": _tool_send_telegram,
     },
-    "finish": {"spec": "finish(summary: str) — end the run with a one-paragraph summary", "run": None},
+    "finish": {
+        "spec": (
+            "finish(headline: str, bullets: list[str]) — end the run. headline: "
+            "one sentence, the single most important takeaway. bullets: 2-5 "
+            "short items, each under ~15 words, one finding or action per item."
+        ),
+        "run": None,
+    },
 }
 
 SYSTEM_PROMPT = (
@@ -218,7 +257,8 @@ SYSTEM_PROMPT = (
     'object — {"tool": "<name>", "args": {...}} — and nothing else. You will '
     "get an Observation back, then choose the next tool. Investigate before "
     "acting (forecast/summaries/search first, actions after). Prefer few, "
-    "high-value actions. Always end with finish(summary).\n\nTools:\n"
+    "high-value actions. Always end with finish(headline, bullets) — short "
+    "items, not paragraphs.\n\nTools:\n"
     + "\n".join(f"- {t['spec']}" for t in TOOLS.values())
 )
 
@@ -272,6 +312,7 @@ def run(goal: str | None = None) -> dict:
         steps: list[dict] = []
         actions: list[dict] = []
         summary = ""
+        bullets: list[str] = []
         started = time.monotonic()
 
         report = {
@@ -311,8 +352,9 @@ def run(goal: str | None = None) -> dict:
                         f"Only {remaining} steps remain before this run auto-stops. "
                         "Stop investigating or adding more actions. If you haven't "
                         "sent the Telegram wrap-up yet, call send_telegram now with "
-                        "a summary of findings and actions taken, then call "
-                        "finish(summary) as your very next tool call."
+                        "a headline and bullets covering findings and actions taken, "
+                        "then call finish(headline, bullets) as your very next tool "
+                        "call."
                     ),
                 })
             # A reasoning model can blow past the HTTP read timeout, and the
@@ -344,7 +386,12 @@ def run(goal: str | None = None) -> dict:
             name = str(call.get("tool", ""))
             args = call.get("args") or {}
             if name == "finish":
-                summary = str(args.get("summary", ""))[:1500]
+                summary, bullets = _extract_headline_bullets(args)
+                if not summary:
+                    # Model called finish with neither headline nor summary —
+                    # fall back to whatever it did put in the args so the run
+                    # doesn't end with an empty wrap-up.
+                    summary = json.dumps(args, default=str)[:1500]
                 steps.append({"tool": "finish", "args": args, "observation": "run complete"})
                 break
 
@@ -364,6 +411,7 @@ def run(goal: str | None = None) -> dict:
             _flush()
 
         report["summary"] = summary or "Run ended without a summary."
+        report["bullets"] = bullets
         report["finished"] = True
         _flush()
         _log_event("run_finished", steps=len(steps), actions=len(actions), summary=report["summary"])
