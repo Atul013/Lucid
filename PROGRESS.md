@@ -29,7 +29,7 @@
 | Dockerization | 📋 Todo | — | — | Deferred. backend/Dockerfile + compose exist but unused for split deploy; revisit if BE needs containerizing on Azure |
 | Tests + CI | 👀 In Review | Am4l-babu | feature/backend-tests-ci | 25 pytest tests (finance parser, twin simulation, agent cooldown) + GitHub Actions workflow. First push failed CI for real (sys.path issue), fixed with pytest.ini, confirmed green on ubuntu-latest (PR #56) |
 | Security hardening (API auth + rate limiting) | ✅ Done | Am4l-babu | feature/security-hardening | X-API-Key middleware, per-IP rate limit, security headers, audit log — architecture adapted from secure_os_layer review (PR #44 merged) |
-| Data protection hardening | 🔄 Ongoing | Am4l-babu | feature/data-protection-hardening | Encryption at rest for local JSON stores + OAuth/bot secrets, agent prompt-injection guards, Telegram sender-authorization fix |
+| Data protection hardening | 👀 In Review | Am4l-babu | feature/data-protection-hardening | Encryption at rest for local JSON stores + OAuth/bot secrets, agent prompt-injection guards, Telegram sender-authorization fix — 37 pytest tests passing (PR #57) |
 
 ---
 
@@ -148,6 +148,7 @@
 | 2026-07-02 | Am4l-babu | Opened PR #26 (malayalam sentiment) → development |
 | 2026-07-02 | Am4l-babu | Started Google Calendar connector |
 | 2026-07-12 | Am4l-babu | Started data protection hardening (encryption at rest, prompt-injection guards, Telegram auth fix) |
+| 2026-07-12 | Am4l-babu | Opened PR #57 (data protection hardening) → development |
 | 2026-07-11 | Am4l-babu | Started security hardening (API key auth + rate limiting) |
 | 2026-07-11 | Am4l-babu | Opened PR #44 (security hardening) → development |
 | 2026-07-12 | Am4l-babu | PR #44 merged — security hardening done |
