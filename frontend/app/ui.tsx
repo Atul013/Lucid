@@ -240,14 +240,16 @@ export function SplitReveal({
 export function Shell({
   children,
   width = "narrow",
+  className = "",
 }: {
   children: ReactNode;
   width?: "narrow" | "wide";
+  className?: string;
 }) {
   const max = width === "wide" ? "max-w-5xl" : "max-w-3xl";
   return (
     <main
-      className={`mx-auto flex min-h-[calc(100dvh-5rem)] w-full ${max} flex-col px-6 py-20 sm:py-28`}
+      className={`mx-auto flex min-h-[calc(100dvh-5rem)] w-full ${max} flex-col px-6 py-20 sm:py-28 ${className}`}
     >
       {children}
     </main>
