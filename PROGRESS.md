@@ -30,7 +30,7 @@
 | Tests + CI | ✅ Done | Am4l-babu | feature/backend-tests-ci | 25 pytest tests (finance parser, twin simulation, agent cooldown) + GitHub Actions workflow. First push failed CI for real (sys.path issue), fixed with pytest.ini, confirmed green on ubuntu-latest (PR #56 merged) |
 | Security hardening (API auth + rate limiting) | ✅ Done | Am4l-babu | feature/security-hardening | X-API-Key middleware, per-IP rate limit, security headers, audit log — architecture adapted from secure_os_layer review (PR #44 merged) |
 | Data protection hardening | ✅ Done | Am4l-babu | feature/data-protection-hardening | Encryption at rest extended to every local JSON store (Ego/Drift/Relationships/Graph/Timeline/SNN caches + WhatsApp config, not just the mock archive), agent prompt-injection guard, Telegram sender-authorization fix + a self-caught follow-up fix (group chats could seize ownership) — 39 pytest tests passing (PR #57 merged) |
-| Data export / right-to-delete | 🔄 Ongoing | Am4l-babu | feature/data-export-delete | One endpoint to dump or purge everything a user has stored. Next in PLAN.md Phase 3 order (#1 scheduled agent runs holds for explicit go-ahead; #2 Telegram briefing delivery is scoped under Atul013's Ongoing Morning Briefing) |
+| Data export / right-to-delete | 👀 In Review | Am4l-babu | feature/data-export-delete | GET /privacy/export bundles every local store (archive + every derived cache + credentials) as one JSON download; DELETE /privacy/purge?confirm=true wipes the same footprint. Added wipe_*() to chroma.py (mock + real) since no delete-everything path existed for the archive collections (PR #58) |
 
 ---
 
@@ -198,3 +198,4 @@
 | 2026-07-12 | Atul013 | WhatsApp connector working end to end (pairing code + agent replies); fixed WhatsApp LID migration breakage |
 | 2026-07-12 | Atul013 | Logged: archive is mostly seeded demo data (calendar/health synthetic, Telegram empty) — AI layers are reasoning over fake inputs |
 | 2026-07-12 | Am4l-babu | PR #57 merged — data protection hardening done; started data export / right-to-delete endpoint (PLAN.md Phase 3 #3, skipped #1 which needs go-ahead and #2 which overlaps Atul013's Ongoing Morning Briefing) |
+| 2026-07-12 | Am4l-babu | Opened PR #58 (data export / right-to-delete: /privacy/export + /privacy/purge) → development |
