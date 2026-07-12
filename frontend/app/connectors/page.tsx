@@ -79,6 +79,9 @@ function useWhatsApp() {
   const [code, setCode] = useState<string | null>(null);
   const [claiming, setClaiming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showQr, setShowQr] = useState(false);
+  const [operatorQr, setOperatorQr] = useState<string | null>(null);
+  const [qrLoading, setQrLoading] = useState(false);
 
   const refresh = useCallback(
     () =>
@@ -153,10 +156,58 @@ function useWhatsApp() {
     setClaiming(false);
   }
 
+  // Operator-only: the service's own link QR. Reachable from the browser so a
+  // re-link never means SSHing into the box and scanning a code out of the logs
+  // before it rotates. WhatsApp refreshes the QR every ~20s, so keep polling
+  // and flip to connected the moment it links.
+  useEffect(() => {
+    if (!showQr) return;
+    let cancelled = false;
+
+    const tick = async () => {
+      try {
+        const r = await statusFetch("/whatsapp/qr");
+        if (!r.ok) throw new Error("bridge offline");
+        const d = await r.json();
+        if (cancelled) return;
+        if (d.ready) {
+          setShowQr(false);
+          setOperatorQr(null);
+          setServiceReady(true);
+          return;
+        }
+        setOperatorQr(d.qr ?? null);
+      } catch {
+        if (cancelled) return;
+        setError("WhatsApp bridge isn't running on the server.");
+        setShowQr(false);
+      } finally {
+        if (!cancelled) setQrLoading(false);
+      }
+    };
+
+    tick();
+    const id = setInterval(tick, 3000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [showQr]);
+
+  function showOperatorQr() {
+    setError(null);
+    setQrLoading(true);
+    setShowQr(true);
+  }
+
   const status: Status =
     serviceReady === null ? "checking" : paired ? "connected" : "disconnected";
 
-  return { status, serviceReady, paired, code, claiming, error, connect, disconnect };
+  return {
+    status, serviceReady, paired, code, claiming, error,
+    operatorQr, qrLoading, showOperatorQr,
+    connect, disconnect,
+  };
 }
 
 function useTelegram() {
@@ -637,14 +688,40 @@ export default function ConnectorsPage() {
           {wa.error && <Note>{wa.error}</Note>}
 
           {/* Operator concern, not the user's: the Lucid service itself has to be
-              linked to WhatsApp before anyone can message it. */}
+              linked to WhatsApp before anyone can message it. The QR lives behind
+              a disclosure so users don't mistake it for their own connect step —
+              but it stays reachable, because the alternative is SSHing into the
+              server and scanning a code out of journalctl before it rotates. */}
           {wa.serviceReady === false && (
-            <Note>
-              Lucid&apos;s WhatsApp service is offline, so it can&apos;t receive
-              messages yet. That&apos;s a one-time server setup — whoever runs
-              Lucid links the business number by scanning a QR in the
-              whatsapp_service terminal. Nothing for you to scan.
-            </Note>
+            <details className="rounded-xl border border-line-2 bg-surface-2 p-4">
+              <summary className="cursor-pointer font-mono text-[0.6rem] uppercase tracking-[0.18em] text-faint">
+                Service offline — operator setup
+              </summary>
+              <p className="mt-3 text-[0.82rem] leading-relaxed text-muted">
+                Lucid&apos;s WhatsApp service isn&apos;t linked, so it can&apos;t
+                receive messages. This is a one-time server step — whoever runs
+                Lucid links the business number. <strong>Nothing for you to scan.</strong>
+              </p>
+              {wa.operatorQr ? (
+                <div className="mt-4 flex flex-col items-center gap-2">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={wa.operatorQr}
+                    alt="WhatsApp service pairing QR"
+                    className="h-[200px] w-[200px] rounded-lg bg-white p-2"
+                  />
+                  <p className="font-mono text-[0.58rem] uppercase tracking-[0.18em] text-faint">
+                    Scan with the Lucid business number · refreshes automatically
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-4">
+                  <GhostButton onClick={wa.showOperatorQr}>
+                    {wa.qrLoading ? "Fetching…" : "Show link QR"}
+                  </GhostButton>
+                </div>
+              )}
+            </details>
           )}
         </ConnectorCard>
 
