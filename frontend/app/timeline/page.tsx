@@ -110,7 +110,7 @@ function DayCard({ day, index, total, avgScore }: { day: Day; index: number; tot
       </div>
 
       {/* Stats grid */}
-      <div className="mt-6 grid grid-cols-3 divide-x divide-line rounded-xl border border-line bg-surface/50">
+      <div className="mt-6 grid grid-cols-1 divide-y divide-line rounded-xl border border-line bg-surface/50 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         <div className="px-4 py-3">
           <p className="font-mono text-[0.55rem] uppercase tracking-[0.18em] text-faint">Messages</p>
           <p className="mt-1 font-mono text-lg font-medium tabular-nums text-ink">{day.count}</p>

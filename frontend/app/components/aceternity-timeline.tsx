@@ -39,7 +39,7 @@ export const AceternityTimeline = ({ data }: { data: TimelineEntry[] }) => {
             className="flex justify-start pt-10 md:pt-32 md:gap-10"
           >
             {/* Sticky left: dot + label */}
-            <div className="sticky top-40 z-40 flex w-40 shrink-0 flex-col items-center self-start md:flex-row">
+            <div className="sticky top-40 z-40 flex w-10 shrink-0 flex-col items-center self-start md:w-40 md:flex-row">
               <div className="absolute left-3 flex h-10 w-10 items-center justify-center rounded-full bg-paper">
                 <div className="h-4 w-4 rounded-full border border-line bg-surface p-2" />
               </div>
@@ -49,7 +49,7 @@ export const AceternityTimeline = ({ data }: { data: TimelineEntry[] }) => {
             </div>
 
             {/* Content */}
-            <div className="relative min-w-0 flex-1 pl-20 md:pl-0">
+            <div className="relative min-w-0 flex-1 pl-4 md:pl-0">
               <h3 className="mb-3 block font-mono text-[0.6rem] uppercase tracking-[0.2em] text-faint md:hidden">
                 {item.title}
               </h3>

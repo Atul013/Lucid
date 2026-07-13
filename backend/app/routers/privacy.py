@@ -43,6 +43,7 @@ _JSON_STORES = {
     "telegram_config": telegram_connector.CONFIG_FILE,
     "whatsapp_config": whatsapp_mod.CONFIG_FILE,
     "notes_config": notes_mod.CONFIG_FILE,
+    "whatsapp_conversations": whatsapp_mod.CONVERSATIONS_FILE,
 }
 
 

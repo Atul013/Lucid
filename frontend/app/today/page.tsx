@@ -149,6 +149,12 @@ export default function Today() {
             <CardBody className="w-full">
               <CardItem translateZ={20} className="w-full">
                 <div className="card relative overflow-hidden p-8 sm:p-12">
+                  {/* Soft accent glow — gives the panel life on touch, where the
+                      3D tilt is disabled. Harmless flourish on desktop too. */}
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute -top-24 left-1/2 h-48 w-[70%] -translate-x-1/2 rounded-full bg-accent/20 blur-3xl"
+                  />
                   {/* Decorative large quote mark floats deeper */}
                   <CardItem
                     as="span"

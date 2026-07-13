@@ -76,10 +76,10 @@ export default function Tripwire() {
 
   return (
     <>
-      {/* Full-span orbiting circles — fixed behind the whole page */}
+      {/* Full-span orbiting circles — fixed behind the whole page, desktop only */}
       <div
         aria-hidden
-        className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center overflow-hidden"
+        className="pointer-events-none fixed inset-0 z-0 hidden items-center justify-center overflow-hidden sm:flex"
       >
         <div className="relative flex h-full w-full items-center justify-center">
           {/* Outer orbit — 6 icons, large radius to span the viewport */}
