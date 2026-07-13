@@ -202,6 +202,32 @@ if MOCK_MODE:
     def wipe_messages():
         MESSAGES_MOCK_FILE.unlink(missing_ok=True)
 
+    NOTES_MOCK_FILE = Path("notes_mock_db.json")
+
+    def _read_notes_db() -> list[dict]:
+        return crypto_store.read_json(NOTES_MOCK_FILE, [])
+
+    def ingest_notes(records: list[dict]) -> int:
+        if not records:
+            return 0
+        by_id = {r["id"]: r for r in _read_notes_db()}
+        for r in records:
+            by_id[r["id"]] = _with_embedding(r)
+        crypto_store.write_json(NOTES_MOCK_FILE, sorted(by_id.values(), key=lambda r: r["date"]))
+        return len(records)
+
+    def search_notes(query: str, n_results: int = 10) -> list[dict]:
+        db = _read_notes_db()
+        if not query:
+            return _public(db[:n_results])
+        return _public(_rank(db, query, n_results))
+
+    def all_notes() -> list[dict]:
+        return _public(_read_notes_db())
+
+    def wipe_notes():
+        NOTES_MOCK_FILE.unlink(missing_ok=True)
+
 else:
     _CLIENT = chromadb.PersistentClient(path=os.getenv("CHROMA_PATH", "chroma_data"))
 
@@ -384,3 +410,34 @@ else:
 
     def wipe_messages():
         _safe_delete_collection("messages")
+
+    def _notes_collection():
+        return _CLIENT.get_or_create_collection("notes")
+
+    def ingest_notes(records: list[dict]) -> int:
+        if not records:
+            return 0
+        _notes_collection().upsert(
+            ids=[r["id"] for r in records],
+            documents=[r["text"] for r in records],
+            metadatas=[{k: v for k, v in r.items() if k not in ("id", "text")} for r in records],
+        )
+        return len(records)
+
+    def search_notes(query: str, n_results: int = 10) -> list[dict]:
+        results = _notes_collection().query(query_texts=[query], n_results=n_results)
+        docs = results["documents"][0]
+        metas = results["metadatas"][0]
+        ids = results["ids"][0]
+        return [{"id": i, "text": d, **m} for i, d, m in zip(ids, docs, metas)]
+
+    def all_notes() -> list[dict]:
+        """Every note, for summary/analysis jobs (not a query)."""
+        data = _notes_collection().get(include=["documents", "metadatas"])
+        return [
+            {"id": i, "text": d, **m}
+            for i, d, m in zip(data["ids"], data["documents"], data["metadatas"])
+        ]
+
+    def wipe_notes():
+        _safe_delete_collection("notes")

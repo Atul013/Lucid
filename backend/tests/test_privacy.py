@@ -40,6 +40,7 @@ def isolated_stores(tmp_path, monkeypatch):
         "health": [{"id": "h1"}],
         "events": [{"id": "ev1"}],
         "messages": [{"id": "m1"}],
+        "notes": [{"id": "n1"}],
     }
     for kind, data in archive.items():
         monkeypatch.setattr(privacy.chroma, f"all_{kind}", lambda data=data: data)
@@ -114,7 +115,7 @@ def test_purge_with_confirm_wipes_every_store(isolated_stores):
         assert not path.exists()
     assert not action_log.exists()
     assert set(wiped) == {
-        "emails", "transactions", "health", "events", "messages",
+        "emails", "transactions", "health", "events", "messages", "notes",
         "poller_stopped", "telegram_disconnected",
     }
 
