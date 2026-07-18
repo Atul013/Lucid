@@ -118,7 +118,7 @@
 |---|---|---|---|---|
 | UI polish | 🔄 Ongoing | Atul013 | feature/ui-polish | Mobile-safe nav, consistency pass |
 | Expo demo prep | 🔄 Ongoing | Atul013 | feature/expo-prep | Demo script + mock-data seed + deployment guide |
-| Roadmap refresh (ROADMAP.md + docs/roadmap.html) | 🔄 Ongoing | Am4l-babu | feature/roadmap-refresh | ROADMAP.md was 16 days stale (its Phase 1–3 items have mostly shipped). Rewrite as a living horizons roadmap + suggestions/upgrades backlog, plus a self-contained styled docs/roadmap.html |
+| Roadmap refresh (ROADMAP.md + docs/roadmap.html) | 👀 In Review | Am4l-babu | feature/roadmap-refresh | ROADMAP.md was 16 days stale (its Phase 1–3 items have mostly shipped). Rewritten as a living horizons roadmap (Now/Next/Later/Edge) + rated suggestions backlog, plus a self-contained styled docs/roadmap.html. Branch pushed; PR to development pending (no gh CLI on this machine — open via GitHub compare link) |
 
 ---
 
@@ -209,3 +209,4 @@
 | 2026-07-12 | Am4l-babu | Started Local Notes connector (backend only — the /connectors frontend card is a placeholder inside Atul013's In Review PR, left untouched) |
 | 2026-07-12 | Am4l-babu | Opened PR #64 (Local Notes connector) → development |
 | 2026-07-18 | Am4l-babu | Started roadmap refresh — rewrite stale ROADMAP.md as living horizons roadmap + styled docs/roadmap.html |
+| 2026-07-18 | Am4l-babu | Pushed feature/roadmap-refresh (ROADMAP.md rewrite + docs/roadmap.html); PR → development to be opened via GitHub |
