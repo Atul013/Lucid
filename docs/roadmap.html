@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lucid — Roadmap</title>
+<style>
+  :root {
+    --ink: #0a0d12;
+    --panel: #101620;
+    --panel-2: #0d1219;
+    --line: #1e2836;
+    --text: #dce3ec;
+    --dim: #8a97a8;
+    --faint: #5b6778;
+    --lamp: #f2b24e;
+    --teal: #54d2be;
+    --done: #5fbf8a;
+    --review: #9d8cff;
+    --now: #e2695e;
+    --next: #f2b24e;
+    --later: #5fbf8a;
+    --edge: #6ea8fe;
+    --mono: ui-monospace, "Cascadia Code", "Cascadia Mono", Consolas, "SF Mono", Menlo, monospace;
+    --sans: system-ui, "Segoe UI", Roboto, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: var(--sans);
+    line-height: 1.6;
+    font-size: 16px;
+  }
+  .wrap { max-width: 900px; margin: 0 auto; padding: 0 24px 96px; }
+
+  /* ---------- hero ---------- */
+  header {
+    position: relative;
+    padding: 96px 0 64px;
+    overflow: hidden;
+  }
+  .lamp-glow {
+    position: absolute;
+    top: -140px; left: 50%;
+    width: 560px; height: 340px;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at center, rgba(242,178,78,0.16), rgba(242,178,78,0.04) 55%, transparent 75%);
+    pointer-events: none;
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--lamp);
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(30px, 6vw, 44px);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  h1 .slash { color: var(--faint); }
+  .tagline {
+    margin-top: 16px;
+    color: var(--dim);
+    font-size: 17px;
+    max-width: 46ch;
+  }
+  .meta-row {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    margin-top: 28px;
+    font-family: var(--mono); font-size: 12.5px;
+  }
+  .meta-row span {
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 4px 12px;
+    color: var(--dim);
+  }
+  .meta-row span b { color: var(--text); font-weight: 500; }
+
+  /* ---------- sections ---------- */
+  section { margin-top: 72px; }
+  h2 {
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--teal);
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 24px;
+  }
+  h2::after { content: ""; height: 1px; flex: 1; background: var(--line); }
+  .lede { color: var(--dim); max-width: 62ch; margin-bottom: 24px; }
+  .lede b { color: var(--text); font-weight: 600; }
+
+  /* ---------- status board ---------- */
+  .board { display: grid; gap: 10px; }
+  .pillar {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 16px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px 18px;
+    align-items: baseline;
+  }
+  .pillar .name { font-family: var(--mono); font-size: 13px; color: var(--lamp); }
+  .pillar .state { font-size: 14.5px; color: var(--dim); }
+  .pillar .state em { font-style: normal; color: var(--text); }
+  .truth {
+    margin-top: 18px;
+    border-left: 3px solid var(--now);
+    background: var(--panel-2);
+    border-radius: 0 10px 10px 0;
+    padding: 14px 18px;
+    color: var(--dim);
+    font-size: 15px;
+  }
+  .truth b { color: var(--text); }
+
+  /* ---------- horizons rail ---------- */
+  .horizon { position: relative; padding-left: 40px; margin-top: 48px; }
+  .horizon::before {
+    content: "";
+    position: absolute; left: 11px; top: 34px; bottom: -34px;
+    width: 2px; background: var(--line);
+  }
+  .horizon:last-of-type::before { display: none; }
+  .h-node {
+    position: absolute; left: 0; top: 4px;
+    width: 24px; height: 24px; border-radius: 50%;
+    border: 2px solid var(--hc, var(--lamp));
+    background: var(--ink);
+    box-shadow: 0 0 12px 0 color-mix(in srgb, var(--hc, var(--lamp)) 45%, transparent);
+  }
+  .h-node::after {
+    content: ""; position: absolute; inset: 6px;
+    border-radius: 50%; background: var(--hc, var(--lamp));
+  }
+  .h-title {
+    font-family: var(--mono); font-size: 17px; font-weight: 600;
+    color: var(--hc, var(--lamp));
+  }
+  .h-theme { color: var(--dim); font-size: 14.5px; margin: 4px 0 18px; font-style: italic; }
+  .items { display: grid; gap: 8px; }
+  .item {
+    display: grid;
+    grid-template-columns: 44px 1fr;
+    gap: 12px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14.5px;
+  }
+  .item .num { font-family: var(--mono); font-size: 12.5px; color: var(--faint); padding-top: 2px; }
+  .item .what { color: var(--text); font-weight: 600; }
+  .item .why { color: var(--dim); font-weight: 400; }
+
+  /* ---------- backlog cards ---------- */
+  .cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 12px;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: flex; flex-direction: column; gap: 8px;
+  }
+  .card h3 { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.35; }
+  .card p { font-size: 13.5px; color: var(--dim); flex: 1; }
+  .gauges {
+    display: flex; gap: 14px;
+    font-family: var(--mono); font-size: 11.5px;
+    color: var(--faint);
+    border-top: 1px solid var(--line);
+    padding-top: 10px;
+  }
+  .gauge b { color: var(--lamp); font-weight: 500; letter-spacing: 0.08em; }
+  .gauge.effort b { color: var(--teal); }
+
+  /* ---------- principles ---------- */
+  ol.principles { list-style: none; counter-reset: p; display: grid; gap: 10px; }
+  ol.principles li {
+    counter-increment: p;
+    display: grid; grid-template-columns: 40px 1fr; gap: 14px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 14.5px; color: var(--dim);
+  }
+  ol.principles li::before {
+    content: "0" counter(p);
+    font-family: var(--mono); font-size: 13px; color: var(--lamp);
+    padding-top: 2px;
+  }
+  ol.principles b { color: var(--text); }
+
+  footer {
+    margin-top: 88px;
+    border-top: 1px solid var(--line);
+    padding-top: 24px;
+    font-family: var(--mono); font-size: 12.5px; color: var(--faint);
+    display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between;
+  }
+  footer a { color: var(--teal); text-decoration: none; }
+  footer a:hover, footer a:focus-visible { text-decoration: underline; outline: none; }
+
+  @media (max-width: 620px) {
+    .pillar { grid-template-columns: 1fr; gap: 4px; }
+    header { padding-top: 64px; }
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .lamp-glow { animation: breathe 7s ease-in-out infinite alternate; }
+    @keyframes breathe { from { opacity: 0.75; } to { opacity: 1; } }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="lamp-glow" aria-hidden="true"></div>
+  <div class="eyebrow">personal intelligence system</div>
+  <h1>LUCID <span class="slash">//</span> ROADMAP</h1>
+  <p class="tagline">You already know yourself. You just can't see it yet. This is the map of how the mirror gets built — horizons, not deadlines.</p>
+  <div class="meta-row">
+    <span>updated <b>2026-07-18</b></span>
+    <span>truth lives in <b>PROGRESS.md</b></span>
+    <span>plan lives in <b>PLAN.md</b></span>
+    <span>rule <b>hardware waits</b></span>
+  </div>
+</header>
+
+<section id="status">
+  <h2>Where Lucid stands · July 2026</h2>
+  <div class="board">
+    <div class="pillar"><div class="name">connectors</div><div class="state"><em>Shipped:</em> Gmail, Telegram bot + history, Calendar, Finance, Health · <em>In review:</em> WhatsApp bridge (working end-to-end), Local Notes · <em>Todo:</em> Keep, Notion, Discord</div></div>
+    <div class="pillar"><div class="name">intelligence</div><div class="state"><em>Shipped:</em> Twin simulation, autonomous agent (safety-hardened), SNN tripwire, Malayalam/Manglish sentiment · <em>Ongoing:</em> Archive RAG, Ego, Drift, Relationships, Morning Briefing</div></div>
+    <div class="pillar"><div class="name">surfaces</div><div class="state"><em>Shipped:</em> Mobile (Expo) scaffold, Telegram live bot · <em>Ongoing:</em> web dashboard (dark console) · <em>In review:</em> WhatsApp replies</div></div>
+    <div class="pillar"><div class="name">trust</div><div class="state"><em>Shipped:</em> API-key auth + rate limiting, encryption at rest across all stores, export / right-to-delete, prompt-injection guard</div></div>
+    <div class="pillar"><div class="name">infra</div><div class="state"><em>Shipped:</em> tests + CI (70 pytest) · <em>Ongoing:</em> Oracle ARM deploy · <em>Deferred:</em> Dockerization</div></div>
+  </div>
+  <div class="truth"><b>The uncomfortable truth driving Horizon 1:</b> the archive is still mostly synthetic — seeded calendar and health data, zero Telegram history imported. The intelligence layers are real; the life they reason about isn't yet.</div>
+</section>
+
+<section id="horizons">
+  <h2>The route</h2>
+
+  <div class="horizon" style="--hc: var(--now)">
+    <div class="h-node" aria-hidden="true"></div>
+    <div class="h-title">NOW — make it real</div>
+    <p class="h-theme">Lucid must reason about a real life, not evt_0000. Everything here unblocks; nothing here is new surface area.</p>
+    <div class="items">
+      <div class="item"><div class="num">1.1</div><div><span class="what">Real data over demo data.</span> <span class="why">Purge seeds, sync real Calendar, run the Telegram history import. One item that upgrades every AI layer at once.</span></div></div>
+      <div class="item"><div class="num">1.2</div><div><span class="what">Oracle ARM deployment.</span> <span class="why">Always-on backend + HTTPS. A passive twin can't live on a laptop that sleeps; keeps the ₹9,569 credit untouched.</span></div></div>
+      <div class="item"><div class="num">1.3</div><div><span class="what">Land the in-review train.</span> <span class="why">WhatsApp ingestion + formatting, Local Notes, console UI, onboarding. Six open PRs is inventory, not progress.</span></div></div>
+      <div class="item"><div class="num">1.4</div><div><span class="what">Scheduler.</span> <span class="why">Nightly ego refresh, drift check, 7am briefing, SNN feed. "It just shows up" is the product promise.</span></div></div>
+      <div class="item"><div class="num">1.5</div><div><span class="what">Data-freshness panel.</span> <span class="why">Per-connector last-sync + record counts, so stale data is visible and 1.1 never silently regresses.</span></div></div>
+    </div>
+  </div>
+
+  <div class="horizon" style="--hc: var(--next)">
+    <div class="h-node" aria-hidden="true"></div>
+    <div class="h-title">NEXT — close the loop</div>
+    <p class="h-theme">From "answers questions about you" to "tells you things you didn't ask."</p>
+    <div class="items">
+      <div class="item"><div class="num">2.1</div><div><span class="what">Weekly Review.</span> <span class="why">Auto Sunday retro: wins, drift deltas, relationship changes, spend vs. forecast, next-week risk from the twin.</span></div></div>
+      <div class="item"><div class="num">2.2</div><div><span class="what">Memory resurfacing.</span> <span class="why">"One year ago today" + abandoned intentions brought back at the right moment.</span></div></div>
+      <div class="item"><div class="num">2.3</div><div><span class="what">Relationship nudges.</span> <span class="why">"You haven't replied to X in 12 days; you usually reply within 1."</span></div></div>
+      <div class="item"><div class="num">2.4</div><div><span class="what">Remaining connectors.</span> <span class="why">Google Keep, Notion, Discord — plus new candidates: browser history/screen-time, Spotify, photos EXIF.</span></div></div>
+      <div class="item"><div class="num">2.5</div><div><span class="what">Eval harness.</span> <span class="why">Golden questions per AI layer, run in CI — the only defense against silent quality regressions.</span></div></div>
+      <div class="item"><div class="num">2.6</div><div><span class="what">Cost telemetry.</span> <span class="why">NIM token usage + per-feature spend on a /system page, before budget becomes a problem.</span></div></div>
+      <div class="item"><div class="num">2.7</div><div><span class="what">Mobile on-device LLM.</span> <span class="why">llama.rn + quantized small model, hybrid routing. Blocked on native tooling.</span></div></div>
+      <div class="item"><div class="num">2.8</div><div><span class="what">Secret auto-redaction.</span> <span class="why">Scrub OTPs, account numbers, passwords at ingestion — some things shouldn't be remembered even encrypted.</span></div></div>
+    </div>
+  </div>
+
+  <div class="horizon" style="--hc: var(--later)">
+    <div class="h-node" aria-hidden="true"></div>
+    <div class="h-title">LATER — the twin grows up</div>
+    <p class="h-theme">Carried forward from the July 2 roadmap's unshipped Phases 1–2, deepened.</p>
+    <div class="items">
+      <div class="item"><div class="num">3.1</div><div><span class="what">Predictive analytics.</span> <span class="why">Prophet/ARIMA: workload, stress peaks, goal-miss probability — built on simulate_workload().</span></div></div>
+      <div class="item"><div class="num">3.2</div><div><span class="what">Personal life coach.</span> <span class="why">Peak-productivity windows from calendar + screen-time; protect them with DND and app blocking.</span></div></div>
+      <div class="item"><div class="num">3.3</div><div><span class="what">Smart home bridge.</span> <span class="why">Home Assistant API — stress level and calendar status drive lights and phone DND.</span></div></div>
+      <div class="item"><div class="num">3.4</div><div><span class="what">Agent maturity.</span> <span class="why">Auto-drafted follow-ups, calendar reordering proposals, meeting scheduling on shipped safety rails.</span></div></div>
+      <div class="item"><div class="num">3.5</div><div><span class="what">Deeper cultural nuance.</span> <span class="why">Grow Malayalam/Manglish beyond lexicon + Indic transformer.</span></div></div>
+      <div class="item"><div class="num">3.6</div><div><span class="what">Real health & finance APIs.</span> <span class="why">Apple Health / Google Fit and Plaid / Razorpay replace the mock feeds. Team-memory enterprise mode parks here too.</span></div></div>
+    </div>
+  </div>
+
+  <div class="horizon" style="--hc: var(--edge)">
+    <div class="h-node" aria-hidden="true"></div>
+    <div class="h-title">EDGE — a physical body</div>
+    <p class="h-theme">The old Phases 3–4, preserved intact. Enters only when NOW and NEXT are done — the hardware rule stands.</p>
+    <div class="items">
+      <div class="item"><div class="num">4.1</div><div><span class="what">SNN sentinel at the edge.</span> <span class="why">The shipped tripwire becomes a 24/7 sub-watt anomaly watch that wakes the LLM.</span></div></div>
+      <div class="item"><div class="num">4.2</div><div><span class="what">Pi Zero 2 W node + printed hub enclosure.</span> <span class="why">FastAPI + Chroma local, low-RAM tuned — the memory bank never touches the cloud.</span></div></div>
+      <div class="item"><div class="num">4.3</div><div><span class="what">ESP32 environment nodes.</span> <span class="why">BME680 + mic dB over MQTT: "coding errors up 40% when CO2 &gt; 1000 ppm."</span></div></div>
+      <div class="item"><div class="num">4.4</div><div><span class="what">FOV camera + offline interaction.</span> <span class="why">MediaPipe presence/posture; faster-whisper local STT; sign-language-to-speech.</span></div></div>
+    </div>
+  </div>
+</section>
+
+<section id="backlog">
+  <h2>Suggestions &amp; upgrades</h2>
+  <p class="lede">Rated backlog — pull from here when a horizon feels thin. <b>IMP</b> is insight delivered per week of use; <b>EFF</b> is honest build cost.</p>
+  <div class="cards">
+    <div class="card"><h3>Encrypted off-device backup</h3><p>One laptop dying erases the twin's memory. /privacy/export exists — this is a cron and a cipher away.</p><div class="gauges"><span class="gauge">IMP <b>●●●</b></span><span class="gauge effort">EFF <b>●○○</b></span></div></div>
+    <div class="card"><h3>Yearly "Lucid Wrapped"</h3><p>Annual self-portrait: patterns, people, drift arc. Weekly Review's big sibling and the memorable-moment feature.</p><div class="gauges"><span class="gauge">IMP <b>●●●</b></span><span class="gauge effort">EFF <b>●●○</b></span></div></div>
+    <div class="card"><h3>Ego evidence links</h3><p>Every insight cites the messages it came from. Builds trust and catches hallucinated insights in one move.</p><div class="gauges"><span class="gauge">IMP <b>●●●</b></span><span class="gauge effort">EFF <b>●●○</b></span></div></div>
+    <div class="card"><h3>Archive search filters</h3><p>from:, source:, date-range operators in chat and UI chips. RAG improves sharply when the user can scope.</p><div class="gauges"><span class="gauge">IMP <b>●●○</b></span><span class="gauge effort">EFF <b>●○○</b></span></div></div>
+    <div class="card"><h3>Voice journal quick-capture</h3><p>Hold-to-record → whisper STT → archive. The one place manual input earns its keep: thoughts that never hit a messenger.</p><div class="gauges"><span class="gauge">IMP <b>●●○</b></span><span class="gauge effort">EFF <b>●●○</b></span></div></div>
+    <div class="card"><h3>Notification digest discipline</h3><p>One daily Telegram digest instead of per-event pings. Alert fatigue is how personal AI gets uninstalled.</p><div class="gauges"><span class="gauge">IMP <b>●●○</b></span><span class="gauge effort">EFF <b>●○○</b></span></div></div>
+    <div class="card"><h3>Twin webhooks</h3><p>Outbound events — stress spike, drift alert — as webhooks for IFTTT or Home Assistant. Composable before 3.3 exists.</p><div class="gauges"><span class="gauge">IMP <b>●●○</b></span><span class="gauge effort">EFF <b>●○○</b></span></div></div>
+    <div class="card"><h3>Multi-model routing</h3><p>Cheap or local model for classification and summaries; NIM only for deep analysis. Budget armor as usage grows.</p><div class="gauges"><span class="gauge">IMP <b>●●○</b></span><span class="gauge effort">EFF <b>●●○</b></span></div></div>
+    <div class="card"><h3>Web chat conversation memory</h3><p>WhatsApp got a rolling context window in PR #63 — port the same pattern to the /archive chat.</p><div class="gauges"><span class="gauge">IMP <b>●●○</b></span><span class="gauge effort">EFF <b>●○○</b></span></div></div>
+    <div class="card"><h3>Streaks &amp; habit detection</h3><p>Recurring behaviors auto-detected — habit tracking with zero manual entry, powered by Drift's data.</p><div class="gauges"><span class="gauge">IMP <b>●●○</b></span><span class="gauge effort">EFF <b>●●○</b></span></div></div>
+    <div class="card"><h3>Docs site</h3><p>Publish docs/ via GitHub Pages — this page is the first one. Free, and the expo demo can link to it.</p><div class="gauges"><span class="gauge">IMP <b>●○○</b></span><span class="gauge effort">EFF <b>●○○</b></span></div></div>
+  </div>
+</section>
+
+<section id="principles">
+  <h2>Principles · solo guardrails</h2>
+  <ol class="principles">
+    <li><b>Vertical slices.</b> Every branch ships something visible end-to-end; no layer-only work.</li>
+    <li><b>Mock-first, real-second.</b> Every connector works keyless in mock mode, so demos never depend on credentials.</li>
+    <li><b>Privacy is a feature, not a section.</b> Encryption, export, purge and redaction ship with features, not after them.</li>
+    <li><b>The archive is the product.</b> Connectors and AI layers are replaceable; the accumulated, owned memory is not.</li>
+    <li><b>Hardware waits.</b> The rule that opened the old roadmap still closes this one.</li>
+    <li><b>PROGRESS.md discipline.</b> An idea isn't real until it has a row and a branch. This page holds ideas; that file holds truth.</li>
+  </ol>
+</section>
+
+<footer>
+  <span>lucid // build-a-project 14 · IEEE CS SBC ASIET</span>
+  <span><a href="../ROADMAP.md">ROADMAP.md</a> · <a href="../PROGRESS.md">PROGRESS.md</a> · <a href="../PLAN.md">PLAN.md</a></span>
+</footer>
+
+</div>
+</body>
+</html>
